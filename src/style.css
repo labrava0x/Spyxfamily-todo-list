@@ -1,0 +1,291 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Special+Elite&display=swap');
+
+body {
+  background-color: #2b4c48; /* Spy x Family Teal desk background */
+  color: #1c2826;
+  font-family: 'Special Elite', cursive, monospace;
+  margin: 0;
+  padding: 2.5rem;
+}
+
+.title-card-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  background: transparent !important;
+}
+
+/* Heavy ink title card style matching your reference */
+h1 {
+  font-family: 'Anton', sans-serif;
+  font-size: 4.2rem;
+  color: #1a1a1a;
+  letter-spacing: 6px;
+  margin: 0.3rem 0 1rem 0;
+  text-transform: uppercase;
+  transform: skew(-6deg);
+  background-color: #e2ceaa;
+  display: inline-block;
+  padding: 0.2rem 1.5rem;
+  border: 3px solid #3d3424;
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.agency-selector {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.agency-tab-btn {
+  background-color: #1c3532;
+  color: #a3c1bd;
+  border: 1px solid #456d68;
+  padding: 0.5rem 1.2rem;
+  font-family: 'Anton', sans-serif;
+  font-size: 1rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.2s ease;
+}
+
+.agency-tab-btn.active {
+  background-color: #eedcb9;
+  color: #2b1e10;
+  border-color: #8c7a5b;
+  box-shadow: 0px -4px 0px #e8c872;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Physical Manila Paper Dossier Folders */
+.dossier-folder {
+  background-color: #eedcb9;
+  border: 2px solid #8c7a5b;
+  box-shadow: 8px 8px 0px rgba(0, 0, 0, 0.3);
+  padding: 2rem;
+  position: relative;
+  border-radius: 0 6px 6px 6px;
+}
+
+.folder-tab {
+  position: absolute;
+  top: -30px;
+  left: -2px;
+  background-color: #d6c098;
+  border: 2px solid #8c7a5b;
+  border-bottom: none;
+  padding: 0.3rem 1.2rem;
+  font-family: 'Anton', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  color: #3d3424;
+  border-radius: 6px 6px 0 0;
+}
+
+h2 {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.5rem;
+  color: #2b1e10;
+  border-bottom: 2px solid #8c7a5b;
+  padding-bottom: 0.4rem;
+  margin-top: 0;
+  letter-spacing: 1.5px;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-family: 'Anton', sans-serif;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+  color: #4a3d28;
+}
+
+input, select, textarea {
+  background-color: #f7f1e1;
+  border: 1px solid #9c8a6b;
+  padding: 0.6rem;
+  font-family: 'Special Elite', monospace;
+  color: #1c2826;
+  border-radius: 2px;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2b4c48;
+}
+
+/* Loid's Blond Hair Accent Buttons */
+.primary-btn.dossier-btn {
+  background-color: #e8c872;
+  color: #2b1e10;
+  border: 1px solid #b8973e;
+  padding: 0.7rem 1.2rem;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+}
+
+.primary-btn.dossier-btn:hover {
+  background-color: #f0d487;
+}
+
+.secondary-btn {
+  background-color: #8c7a5b;
+  color: #f7f4ea;
+  border: 1px solid #5e5038;
+  padding: 0.6rem 1rem;
+  font-family: 'Anton', sans-serif;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background-color: #756549;
+}
+
+.status-tab-btn {
+  background-color: #d6c098;
+  border: 1px solid #8c7a5b;
+  padding: 0.3rem 0.7rem;
+  font-family: 'Anton', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #3d3424;
+}
+
+.status-tab-btn.active {
+  background-color: #e8c872;
+  color: #2b1e10;
+  border-color: #b8973e;
+}
+
+.ticking-bomb {
+  font-weight: bold;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.bomb-ticking {
+  background-color: #e6b800;
+  color: #2b1e10;
+  animation: pulse-bomb 1.5s infinite;
+}
+
+.bomb-exploding {
+  background-color: #b22222;
+  color: #ffffff;
+  animation: flash-bomb 0.8s infinite;
+}
+
+@keyframes pulse-bomb {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0.7; }
+}
+
+@keyframes flash-bomb {
+  0% { background-color: #b22222; }
+  50% { background-color: #ff4500; }
+  100% { background-color: #b22222; }
+}
+
+.mission-warning {
+  border-left-color: #e6b800 !important;
+}
+
+.mission-danger {
+  border-left-color: #b22222 !important;
+  background-color: #fae6e6 !important;
+}
+
+.project-tab-wrapper {
+  display: flex;
+  margin-bottom: 0.5rem;
+  gap: 0.3rem;
+}
+
+.project-btn {
+  flex: 1;
+  background: #e2ceaa;
+  border: 1px solid #9c8a6b;
+  padding: 0.5rem;
+  font-family: 'Special Elite', monospace;
+  cursor: pointer;
+  text-align: left;
+}
+
+.project-btn.active {
+  background: #e8c872;
+  font-weight: bold;
+  border-color: #b8973e;
+}
+
+.delete-project-btn {
+  background: #8b1e1e;
+  color: #fff;
+  border: none;
+  padding: 0 0.6rem;
+  cursor: pointer;
+}
+
+.mission-card {
+  background: #f7f1e1;
+  border: 1px solid #9c8a6b;
+  border-left: 6px solid #e8c872;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  box-shadow: 3px 3px 0px rgba(0,0,0,0.15);
+}
+
+.mission-card.accomplished {
+  opacity: 0.6;
+  border-left-color: #4b6b54;
+  background: #eae5d5;
+}
+
+.mission-card .mission-title-text {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  color: #2b1e10;
+}
+
+.mission-card::before {
+  content: "🎯";
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  font-size: 1.1rem;
+  opacity: 0.4;
+}
+
+.no-missions {
+  font-family: 'Special Elite', monospace;
+  color: #5c4d37;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px dashed #8b1e1e;
+  background: #f7f1e1;
+}
+
+.hidden {
+  display: none;
+}

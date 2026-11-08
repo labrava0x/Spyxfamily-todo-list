@@ -1,9 +1,8 @@
-import { initStorage } from './storage.js';
-import { renderApp, initEventListeners } from './domController.js';
+import './style.css';
+import { initLayout, initEventListeners, renderApp } from './domController.js';
 
-// Initialize application data and DOM listeners on load
 document.addEventListener('DOMContentLoaded', () => {
-  initStorage();
-  renderApp();
+  initLayout();
   initEventListeners();
+  renderApp();
 });
