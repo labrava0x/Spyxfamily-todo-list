@@ -14,7 +14,7 @@ import {
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
 let currentStatusFilter = 'all';
-let currentViewMode = 'board'; // 'board', 'prepare', 'calendar', 'table', 'insights', 'developer', 'automations'
+let currentViewMode = 'board';
 
 export function getCategories() {
   const saved = localStorage.getItem('wise_categories');
@@ -69,14 +69,14 @@ export function initLayout() {
     <header class="title-card-header" style="text-align: center; margin-bottom: 2rem;">
       <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto 0.5rem auto; padding: 0 1rem;">
         <div style="display: flex; gap: 0.5rem;">
-          <button type="button" id="theme-toggle-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #2b4c48; color: #fff;">🌓 Toggle Theme</button>
-          <button type="button" id="export-json-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #4b6b54; color: #fff;">💾 Export Backup</button>
+          <button type="button" id="theme-toggle-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #2b4c48; color: #fff;">🌓 Theme</button>
+          <button type="button" id="export-json-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #4b6b54; color: #fff;">💾 Export</button>
           <label class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #8b1e1e; color: #fff; cursor: pointer; margin: 0;">
-            📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
+            📂 Import <input type="file" id="import-json-file" accept=".json" style="display: none;" />
           </label>
         </div>
         <div class="classified-stamp" style="border: 3px double #8b1e1e; color: #8b1e1e; padding: 0.2rem 1rem; font-family: 'Anton', sans-serif; font-size: 1rem; letter-spacing: 3px; transform: rotate(-2deg); background: #eedcb9; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">TOP SECRET</div>
-        <div style="font-size: 0.8rem; font-family: 'Special Elite', monospace; color: #5c4d37;">Shortcuts: Ctrl+N, 1-6</div>
+        <div style="font-size: 0.8rem; font-family: 'Special Elite', monospace; color: #5c4d37;">Ctrl+N to New</div>
       </div>
       <div>
         <h1>CLASSIFIED DOSSIERS</h1>
@@ -124,13 +124,13 @@ export function initLayout() {
               <button type="button" id="voice-dictate-btn" class="secondary-btn" style="background: #2b4c48; color: #fff; font-size: 0.8rem; padding: 0.3rem 0.6rem;">🎙️ Voice Dictate</button>
             </div>
 
-            <form id="mission-form" class="form-group">
-              <div class="form-group">
+            <form id="mission-form" class="form-group" style="display: flex; flex-direction: column; gap: 0.8rem;">
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-project">Target Operation</label>
-                <select id="mission-project"></select>
+                <select id="mission-project" style="width: 100%;"></select>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-category">Category</label>
                 <div class="category-select-wrapper" style="display: flex; gap: 0.5rem;">
                   <select id="mission-category" style="flex: 1;"></select>
@@ -138,53 +138,60 @@ export function initLayout() {
                 </div>
               </div>
 
-              <div class="form-group category-add-group" style="display: flex; gap: 0.5rem;">
-                <input type="text" id="new-category-input" placeholder="New category name..." />
-                <button type="button" id="add-category-btn" class="secondary-btn">Save Category</button>
+              <div class="form-group" style="margin: 0;">
+                <label>Add New Category</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="text" id="new-category-input" placeholder="New category name..." style="flex: 1;" />
+                  <button type="button" id="add-category-btn" class="secondary-btn">Save Category</button>
+                </div>
               </div>
 
-              <div class="form-group">
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-title">Mission Title</label>
-                <input type="text" id="mission-title" placeholder="e.g. Secure intelligence package" required />
+                <input type="text" id="mission-title" placeholder="e.g. Secure intelligence package" required style="width: 100%;" />
               </div>
-              <div class="form-group">
+              
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-desc">Description</label>
-                <textarea id="mission-desc" rows="2" placeholder="Mission details..."></textarea>
+                <textarea id="mission-desc" rows="2" placeholder="Mission details..." style="width: 100%;"></textarea>
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-date">Mission deadline</label>
-                <input type="date" id="mission-date" style="cursor: pointer;" />
+                <input type="date" id="mission-date" style="cursor: pointer; width: 100%;" />
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-threat">Threat Level (Priority)</label>
-                <select id="mission-threat">
+                <select id="mission-threat" style="width: 100%;">
                   <option value="Low">Low</option>
                   <option value="Medium" selected>Medium</option>
                   <option value="Critical">Critical</option>
                 </select>
               </div>
-              <div class="form-group">
+
+              <div class="form-group" style="margin: 0;">
                 <label for="mission-notes">Field Notes / Handler Debrief</label>
-                <textarea id="mission-notes" rows="2" placeholder="Initial handler instructions or @mentions..."></textarea>
+                <textarea id="mission-notes" rows="2" placeholder="Initial handler instructions or @mentions..." style="width: 100%;"></textarea>
               </div>
               
               <!-- Spreadsheets, Links, and Image Attachments -->
               <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <div class="form-group" style="flex: 1; min-width: 150px;">
+                <div class="form-group" style="flex: 1; min-width: 150px; margin: 0;">
                   <label for="mission-spreadsheet">📊 Spreadsheet</label>
-                  <input type="text" id="mission-spreadsheet" placeholder="e.g. Budget.xlsx" />
+                  <input type="text" id="mission-spreadsheet" placeholder="e.g. Budget.xlsx" style="width: 100%;" />
                 </div>
-                <div class="form-group" style="flex: 1; min-width: 150px;">
+                <div class="form-group" style="flex: 1; min-width: 150px; margin: 0;">
                   <label for="mission-attachment">📎 Attachment URL</label>
-                  <input type="text" id="mission-attachment" placeholder="e.g. https://..." />
+                  <input type="text" id="mission-attachment" placeholder="e.g. https://..." style="width: 100%;" />
                 </div>
-                <div class="form-group" style="flex: 1; min-width: 150px;">
+                <div class="form-group" style="flex: 1; min-width: 150px; margin: 0;">
                   <label for="mission-image-file">🖼️ Evidence Image</label>
-                  <input type="file" id="mission-image-file" accept="image/*" style="font-size: 0.8rem; padding: 0.2rem;" />
+                  <input type="file" id="mission-image-file" accept="image/*" style="font-size: 0.8rem; padding: 0.2rem; width: 100%;" />
                 </div>
               </div>
 
-              <button type="submit" class="primary-btn dossier-btn">Dispatch Mission</button>
+              <button type="submit" class="primary-btn dossier-btn" style="margin-top: 0.5rem;">Dispatch Mission</button>
             </form>
           </div>
 
