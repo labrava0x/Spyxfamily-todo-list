@@ -14,7 +14,7 @@ import {
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
 let currentStatusFilter = 'all';
-let currentViewMode = 'board'; // 'board', 'prepare', 'calendar', 'table', 'automations'
+let currentViewMode = 'board'; // 'board', 'prepare', 'calendar', 'table', 'automations', 'developer'
 
 export function getCategories() {
   const saved = localStorage.getItem('wise_categories');
@@ -39,7 +39,7 @@ export function saveAutomations(automations) {
 
 export function getCommsConfig() {
   const saved = localStorage.getItem('wise_comms_config');
-  return saved ? JSON.parse(saved) : { telegramToken: '', telegramChatId: '', discordWebhook: '' };
+  return saved ? JSON.parse(saved) : { telegramToken: '', telegramChatId: '', discordWebhook: '', apiKey: 'wise-secret-token-9988', mcpEndpoint: 'http://localhost:3000/mcp' };
 }
 
 export function saveCommsConfig(config) {
@@ -82,7 +82,8 @@ export function initLayout() {
           <button type="button" id="view-prepare-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">🎯 Prepare</button>
           <button type="button" id="view-calendar-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">Calendar</button>
           <button type="button" id="view-table-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">Table</button>
-          <button type="button" id="view-automations-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">⚡ Automations</button>
+          <button type="button" id="view-developer-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">💻 Developer Tools</button>
+          <button type="button" id="view-automations-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">⚡ Comms</button>
         </div>
       </div>
     </header>
@@ -109,7 +110,7 @@ export function initLayout() {
           <div id="board-creation-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
               <h2 style="margin: 0;">Establish mission</h2>
-              <button type="button" id="voice-dictate-btn" class="secondary-btn" style="background: #2b4c48; color: #fff; font-size: 0.8rem; padding: 0.3rem 0.6rem;">🎙️ Speak / Voice Dictate</button>
+              <button type="button" id="voice-dictate-btn" class="secondary-btn" style="background: #2b4c48; color: #fff; font-size: 0.8rem; padding: 0.3rem 0.6rem;">🎙️ Voice Dictate</button>
             </div>
 
             <form id="mission-form" class="form-group">
@@ -156,15 +157,19 @@ export function initLayout() {
                 <textarea id="mission-notes" rows="2" placeholder="Initial handler instructions or @mentions..."></textarea>
               </div>
               
-              <!-- New Attachments & Spreadsheets Fields -->
-              <div style="display: flex; gap: 0.5rem;">
-                <div class="form-group" style="flex: 1;">
-                  <label for="mission-spreadsheet">📊 Spreadsheet Link / Name</label>
-                  <input type="text" id="mission-spreadsheet" placeholder="e.g. Strix_Budget.xlsx" />
+              <!-- Spreadsheets, Links, and Image Attachments -->
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 150px;">
+                  <label for="mission-spreadsheet">📊 Spreadsheet</label>
+                  <input type="text" id="mission-spreadsheet" placeholder="e.g. Budget.xlsx" />
                 </div>
-                <div class="form-group" style="flex: 1;">
-                  <label for="mission-attachment">📎 Attachment URL / File</label>
-                  <input type="text" id="mission-attachment" placeholder="e.g. cipher_key.pdf" />
+                <div class="form-group" style="flex: 1; min-width: 150px;">
+                  <label for="mission-attachment">📎 Attachment URL</label>
+                  <input type="text" id="mission-attachment" placeholder="e.g. https://..." />
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 150px;">
+                  <label for="mission-image-file">🖼️ Evidence Image</label>
+                  <input type="file" id="mission-image-file" accept="image/*" style="font-size: 0.8rem; padding: 0.2rem;" />
                 </div>
               </div>
 
@@ -223,10 +228,16 @@ function renderCurrentView() {
     if (viewHeading) viewHeading.textContent = 'Mission Data Table';
     if (filterContainer) filterContainer.style.display = 'flex';
     renderTableView(container);
+  } else if (currentViewMode === 'developer') {
+    if (creationSection) creationSection.style.display = 'none';
+    if (folderTab) folderTab.textContent = 'DEVELOPER TOOLS & MCP';
+    if (viewHeading) viewHeading.textContent = 'API, CLI & MCP Server Integration';
+    if (filterContainer) filterContainer.style.display = 'none';
+    renderDeveloperView(container);
   } else if (currentViewMode === 'automations') {
     if (creationSection) creationSection.style.display = 'none';
-    if (folderTab) folderTab.textContent = 'AUTOMATIONS & COMMS';
-    if (viewHeading) viewHeading.textContent = 'Automation Rules & Messaging Relays';
+    if (folderTab) folderTab.textContent = 'COMMS RELAYS';
+    if (viewHeading) viewHeading.textContent = 'Messaging Relays (Telegram & Discord)';
     if (filterContainer) filterContainer.style.display = 'none';
     renderAutomationsView(container);
   } else {
@@ -292,13 +303,15 @@ function renderBoardView(container) {
       bombIndicator = ' <span class="ticking-bomb" title="No timeline established">⏳ Inactive</span>';
     }
 
-    // Attachment & Spreadsheet badges
     let extraBadges = '';
     if (mission.spreadsheet) {
       extraBadges += ` <span class="badge" style="background: #4b6b54; color: #fff;">📊 ${mission.spreadsheet}</span>`;
     }
     if (mission.attachment) {
-      extraBadges += ` <span class="badge" style="background: #3b5b76; color: #fff;">📎 ${mission.attachment}</span>`;
+      extraBadges += ` <span class="badge" style="background: #3b5b76; color: #fff;">📎 Link</span>`;
+    }
+    if (mission.imageBase64) {
+      extraBadges += ` <span class="badge" style="background: #8b1e1e; color: #fff;">🖼️ Image</span>`;
     }
 
     const headerDiv = document.createElement('div');
@@ -323,6 +336,9 @@ function renderBoardView(container) {
     detailsDiv.id = `details-drawer-${index}`;
 
     const prep = mission.preparation || { keyTakeaways: '', briefingScript: '' };
+
+    let attachmentHtml = mission.attachment ? `<p><strong>📎 Attachment Link:</strong> <a href="${mission.attachment}" target="_blank" style="color: #8b1e1e; font-weight: bold;">${mission.attachment}</a></p>` : '';
+    let imagePreviewHtml = mission.imageBase64 ? `<div style="margin-top: 0.5rem;"><strong>🖼️ Attached Evidence:</strong><br><img src="${mission.imageBase64}" alt="Evidence" style="max-width: 100%; max-height: 200px; border: 2px solid #8c7a5b; margin-top: 0.3rem;" /></div>` : '';
 
     let commentsHtml = '';
     const comments = mission.comments || [];
@@ -355,7 +371,8 @@ function renderBoardView(container) {
         <p><strong>Description:</strong> ${mission.description || 'None'}</p>
         <p><strong>Handler Debrief / Field Notes:</strong> ${mission.notes || 'None'}</p>
         <p><strong>📊 Linked Spreadsheet:</strong> ${mission.spreadsheet || 'None'}</p>
-        <p><strong>📎 Attachment:</strong> ${mission.attachment || 'None'}</p>
+        ${attachmentHtml}
+        ${imagePreviewHtml}
         
         <!-- Prepare Mission Canvas -->
         <div class="prepare-mission-box" style="background: #f7f1e1; border: 2px dashed #8c7a5b; padding: 0.8rem; margin-top: 0.5rem;">
@@ -409,7 +426,7 @@ function renderPrepareMissionView(container) {
   const activeProject = projects[currentIndex];
 
   if (!activeProject || activeProject.missions.length === 0) {
-    container.innerHTML = '<p class="no-missions">No missions available to prepare. Establish a mission first.</p>';
+    container.innerHTML = '<p class="no-missions">No missions available to prepare.</p>';
     return;
   }
 
@@ -425,10 +442,8 @@ function renderPrepareMissionView(container) {
     html += `
       <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e; border-bottom: 2px solid #d6c098; padding-bottom: 0.3rem;">
-          ${m.title} <span style="font-size: 0.8rem; font-weight: normal; color: #5c4d37;">(Deadline: ${m.dueDate || 'None'})</span>
+          ${m.title}
         </h3>
-        <p style="font-size: 0.9rem; margin: 0.4rem 0;"><strong>Description:</strong> ${m.description || 'None'}</p>
-        
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
           <div>
             <label style="font-size: 0.85rem; font-weight: bold;">3 Core Takeaways:</label>
@@ -436,7 +451,7 @@ function renderPrepareMissionView(container) {
           </div>
           <div>
             <label style="font-size: 0.85rem; font-weight: bold;">Briefing Script / Strategy:</label>
-            <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first. Create the visuals later..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;">${prep.briefingScript || ''}</textarea>
+            <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;">${prep.briefingScript || ''}</textarea>
           </div>
           <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem;">Save Mission Briefing</button>
         </div>
@@ -544,7 +559,7 @@ function renderTableView(container) {
           <tr style="background: #d6c098; border-bottom: 2px solid #8c7a5b; text-align: left;">
             <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Mission Title</th>
             <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Category</th>
-            <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Threat Level</th>
+            <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Threat</th>
             <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Spreadsheet</th>
             <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Attachment</th>
             <th style="padding: 0.6rem; border: 1px solid #9c8a6b;">Deadline</th>
@@ -561,7 +576,7 @@ function renderTableView(container) {
         <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.category || 'Mission'}</td>
         <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.threatLevel}</td>
         <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.spreadsheet || 'None'}</td>
-        <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.attachment || 'None'}</td>
+        <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.attachment || (m.imageBase64 ? '🖼️ Image' : 'None')}</td>
         <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.dueDate || 'None'}</td>
         <td style="padding: 0.6rem; border: 1px solid #9c8a6b;">${m.accomplished ? '✅ Fulfilled' : '⏳ Active'}</td>
       </tr>
@@ -572,26 +587,70 @@ function renderTableView(container) {
   container.innerHTML = html;
 }
 
-function renderAutomationsView(container) {
-  const automations = getAutomations();
+function renderDeveloperView(container) {
   const comms = getCommsConfig();
-  
-  let html = `
+  container.innerHTML = `
+    <div class="developer-dashboard" style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- API Card -->
+      <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #8b1e1e;">
+        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e;">🔌 API Integration</h3>
+        <p style="font-size: 0.85rem; margin-bottom: 0.8rem;">Automate routines and query dossier missions programmatically.</p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: bold;">Your Classified API Token:</label>
+          <input type="text" id="dev-api-key" value="${comms.apiKey || 'wise-secret-token-9988'}" style="width: 100%; padding: 0.4rem; font-size: 0.85rem;" />
+        </div>
+      </div>
+
+      <!-- CLI Card -->
+      <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #2b4c48;">
+        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #2b4c48;">💻 Command Line Interface (CLI)</h3>
+        <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Run daily operations directly from your Linux terminal:</p>
+        <pre style="background: #1c3532; color: #e8c872; padding: 0.6rem; font-size: 0.85rem; border-radius: 4px; overflow-x: auto;">npm install -g wise-dossiers-cli
+wise mission list --active</pre>
+      </div>
+
+      <!-- MCP Server Card -->
+      <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #b8973e;">
+        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e;">🤖 MCP Server (Model Context Protocol)</h3>
+        <p style="font-size: 0.85rem; margin-bottom: 0.8rem;">Allow AI agents to read, write, and manage your intelligence dossiers securely.</p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <label style="font-size: 0.85rem; font-weight: bold;">MCP Server Endpoint:</label>
+          <input type="text" id="dev-mcp-endpoint" value="${comms.mcpEndpoint || 'http://localhost:3000/mcp'}" style="width: 100%; padding: 0.4rem; font-size: 0.85rem;" />
+          <button type="button" id="save-dev-tools-btn" class="secondary-btn" style="align-self: flex-start; margin-top: 0.4rem; padding: 0.4rem 1rem;">Save Developer Config</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('save-dev-tools-btn').addEventListener('click', () => {
+    const apiKey = document.getElementById('dev-api-key').value.trim();
+    const mcpEndpoint = document.getElementById('dev-mcp-endpoint').value.trim();
+    const currentComms = getCommsConfig();
+    currentComms.apiKey = apiKey;
+    currentComms.mcpEndpoint = mcpEndpoint;
+    saveCommsConfig(currentComms);
+    alert("✅ Developer tools & MCP server configuration updated successfully!");
+  });
+}
+
+function renderAutomationsView(container) {
+  const comms = getCommsConfig();
+  container.innerHTML = `
     <div class="automations-dashboard" style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
       <div style="background: #f7f1e1; padding: 1rem; border: 1px solid #9c8a6b; border-top: 4px solid #2b4c48;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #2b4c48;">📡 Messaging Relays (Telegram & Discord)</h3>
         <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem;">
           <div>
             <label style="font-size: 0.85rem; display: block; font-weight: bold;">Telegram Bot Token:</label>
-            <input type="text" id="telegram-token-input" value="${comms.telegramToken}" placeholder="e.g. 123456789:ABC..." style="width: 100%; padding: 0.4rem; font-size: 0.85rem;" />
+            <input type="text" id="telegram-token-input" value="${comms.telegramToken}" placeholder="e.g. 123456789:ABC..." style="width: 100%; padding: 0.4rem;" />
           </div>
           <div>
             <label style="font-size: 0.85rem; display: block; font-weight: bold;">Telegram Chat ID:</label>
-            <input type="text" id="telegram-chatid-input" value="${comms.telegramChatId}" placeholder="e.g. 987654321" style="width: 100%; padding: 0.4rem; font-size: 0.85rem;" />
+            <input type="text" id="telegram-chatid-input" value="${comms.telegramChatId}" placeholder="e.g. 987654321" style="width: 100%; padding: 0.4rem;" />
           </div>
           <div>
             <label style="font-size: 0.85rem; display: block; font-weight: bold;">Discord Webhook URL:</label>
-            <input type="text" id="discord-webhook-input" value="${comms.discordWebhook}" placeholder="e.g. https://discord.com/api/webhooks/..." style="width: 100%; padding: 0.4rem; font-size: 0.85rem;" />
+            <input type="text" id="discord-webhook-input" value="${comms.discordWebhook}" placeholder="e.g. https://discord.com/api/webhooks/..." style="width: 100%; padding: 0.4rem;" />
           </div>
           <button type="button" id="save-comms-config-btn" class="secondary-btn" style="align-self: flex-start; margin-top: 0.4rem; padding: 0.4rem 1rem;">Save Comm Relays</button>
         </div>
@@ -599,18 +658,17 @@ function renderAutomationsView(container) {
     </div>
   `;
 
-  container.innerHTML = html;
-
-  const saveCommsBtn = document.getElementById('save-comms-config-btn');
-  if (saveCommsBtn) {
-    saveCommsBtn.addEventListener('click', () => {
-      const telegramToken = document.getElementById('telegram-token-input').value.trim();
-      const telegramChatId = document.getElementById('telegram-chatid-input').value.trim();
-      const discordWebhook = document.getElementById('discord-webhook-input').value.trim();
-      saveCommsConfig({ telegramToken, telegramChatId, discordWebhook });
-      alert("✅ Communication relay endpoints securely updated!");
-    });
-  }
+  document.getElementById('save-comms-config-btn').addEventListener('click', () => {
+    const telegramToken = document.getElementById('telegram-token-input').value.trim();
+    const telegramChatId = document.getElementById('telegram-chatid-input').value.trim();
+    const discordWebhook = document.getElementById('discord-webhook-input').value.trim();
+    const currentComms = getCommsConfig();
+    currentComms.telegramToken = telegramToken;
+    currentComms.telegramChatId = telegramChatId;
+    currentComms.discordWebhook = discordWebhook;
+    saveCommsConfig(currentComms);
+    alert("✅ Communication relay endpoints securely updated!");
+  });
 }
 
 function attachMissionEventListeners() {
@@ -682,26 +740,20 @@ function attachMissionEventListeners() {
       const comms = getCommsConfig();
 
       if (!comms.telegramToken || !comms.telegramChatId) {
-        alert("⚠️ Please configure your Telegram Bot Token and Chat ID in '⚡ Automations' first.");
+        alert("⚠️ Please configure Telegram in the '⚡ Comms' tab first.");
         return;
       }
 
-      const msg = `🚨 *WISE MISSION ALERT*\n\n*Operation:* ${title}\n*Deadline:* ${due}\n*Status:* Action required by handler.`;
-      const url = `https://api.telegram.org/bot${comms.telegramToken}/sendMessage`;
-
+      const msg = `🚨 *WISE MISSION ALERT*\n\n*Operation:* ${title}\n*Deadline:* ${due}`;
       try {
-        const res = await fetch(url, {
+        const res = await fetch(`https://api.telegram.org/bot${comms.telegramToken}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ chat_id: comms.telegramChatId, text: msg, parse_mode: 'Markdown' })
         });
-        if (res.ok) {
-          alert("📤 Telegram reminder successfully dispatched!");
-        } else {
-          alert("❌ Telegram dispatch failed.");
-        }
+        if (res.ok) alert("📤 Telegram reminder successfully dispatched!");
       } catch (err) {
-        alert("❌ Network error connecting to Telegram.");
+        alert("❌ Telegram connection error.");
       }
     });
   });
@@ -713,27 +765,19 @@ function attachMissionEventListeners() {
       const comms = getCommsConfig();
 
       if (!comms.discordWebhook) {
-        alert("⚠️ Please configure your Discord Webhook URL in '⚡ Automations' first.");
+        alert("⚠️ Please configure Discord in the '⚡ Comms' tab first.");
         return;
       }
 
-      const payload = {
-        content: `🚨 **WISE INTELLIGENCE ALERT**\n> **Mission:** ${title}\n> **Deadline:** ${due}`
-      };
-
       try {
-        const res = await fetch(comms.discordWebhook, {
+        await fetch(comms.discordWebhook, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ content: `🚨 **WISE INTELLIGENCE ALERT**\n> **Mission:** ${title}\n> **Deadline:** ${due}` })
         });
-        if (res.ok || res.status === 204) {
-          alert("💬 Discord reminder successfully posted!");
-        } else {
-          alert("❌ Discord dispatch failed.");
-        }
+        alert("💬 Discord reminder successfully posted!");
       } catch (err) {
-        alert("❌ Network error connecting to Discord.");
+        alert("❌ Discord connection error.");
       }
     });
   });
@@ -756,8 +800,8 @@ function attachMissionEventListeners() {
       if (newTitle === null) return;
       const newDesc = prompt("Edit Description:", mission.description);
       const newDate = prompt("Edit Due Date (YYYY-MM-DD):", mission.dueDate);
-      const newThreat = prompt("Edit Threat Level (Low, Medium, Critical):", mission.threatLevel);
-      const newNotes = prompt("Edit Field Notes / Handler Debrief:", mission.notes);
+      const newThreat = prompt("Edit Threat Level:", mission.threatLevel);
+      const newNotes = prompt("Edit Field Notes:", mission.notes);
 
       updateMission(projectIndex, mIdx, newTitle, newDesc, newDate, newThreat, newNotes);
       renderApp();
@@ -779,8 +823,7 @@ export function initEventListeners() {
   if (projectForm) {
     projectForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const projectNameInput = document.getElementById('project-name');
-      const name = projectNameInput.value.trim();
+      const name = document.getElementById('project-name').value.trim();
       if (name) {
         addProject(name);
         projectForm.reset();
@@ -789,39 +832,28 @@ export function initEventListeners() {
     });
   }
 
-  // Voice Dictation (Web Speech API)
+  // Voice Dictation
   const voiceBtn = document.getElementById('voice-dictate-btn');
   if (voiceBtn) {
     voiceBtn.addEventListener('click', () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        alert("⚠️ Speech recognition is not supported in this browser. Try Chrome or Chromium.");
+        alert("⚠️ Speech recognition not supported in this browser.");
         return;
       }
-
       const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';
-      voiceBtn.textContent = '🎙️ Listening... Speak now!';
+      voiceBtn.textContent = '🎙️ Listening...';
       voiceBtn.style.background = '#8b1e1e';
 
       recognition.onresult = (event) => {
-        const speechToText = event.results[0][0].transcript;
-        document.getElementById('mission-title').value = speechToText;
-        voiceBtn.textContent = '🎙️ Speak / Voice Dictate';
+        document.getElementById('mission-title').value = event.results[0][0].transcript;
+        voiceBtn.textContent = '🎙️ Voice Dictate';
         voiceBtn.style.background = '#2b4c48';
       };
-
-      recognition.onerror = () => {
-        alert("❌ Speech recognition error occurred.");
-        voiceBtn.textContent = '🎙️ Speak / Voice Dictate';
+      recognition.onerror = recognition.onend = () => {
+        voiceBtn.textContent = '🎙️ Voice Dictate';
         voiceBtn.style.background = '#2b4c48';
       };
-
-      recognition.onend = () => {
-        voiceBtn.textContent = '🎙️ Speak / Voice Dictate';
-        voiceBtn.style.background = '#2b4c48';
-      };
-
       recognition.start();
     });
   }
@@ -839,31 +871,43 @@ export function initEventListeners() {
       const notes = document.getElementById('mission-notes').value;
       const spreadsheet = document.getElementById('mission-spreadsheet').value.trim();
       const attachment = document.getElementById('mission-attachment').value.trim();
+      const imageFileInput = document.getElementById('mission-image-file');
       const targetProjectIndex = document.getElementById('mission-project').value;
 
       setCurrentProjectIndex(Number(targetProjectIndex));
-      
-      // Add mission with spreadsheet and attachment properties
-      const projects = getProjects();
-      const project = projects[targetProjectIndex];
-      project.missions.push({
-        title,
-        description: desc,
-        dueDate: date,
-        threatLevel: threat,
-        category,
-        notes,
-        spreadsheet,
-        attachment,
-        accomplished: false,
-        checklist: [],
-        comments: [],
-        preparation: { keyTakeaways: '', briefingScript: '' }
-      });
-      localStorage.setItem('wise_projects', JSON.stringify(projects));
-      
-      renderApp();
-      missionForm.reset();
+
+      const processMissionCreation = (imageBase64 = '') => {
+        const projects = getProjects();
+        const project = projects[targetProjectIndex];
+        project.missions.push({
+          title,
+          description: desc,
+          dueDate: date,
+          threatLevel: threat,
+          category,
+          notes,
+          spreadsheet,
+          attachment,
+          imageBase64,
+          accomplished: false,
+          checklist: [],
+          comments: [],
+          preparation: { keyTakeaways: '', briefingScript: '' }
+        });
+        localStorage.setItem('wise_projects', JSON.stringify(projects));
+        renderApp();
+        missionForm.reset();
+      };
+
+      if (imageFileInput.files && imageFileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(uploadEvent) {
+          processMissionCreation(uploadEvent.target.result);
+        };
+        reader.readAsDataURL(imageFileInput.files[0]);
+      } else {
+        processMissionCreation('');
+      }
     });
   }
 
@@ -896,7 +940,6 @@ export function initEventListeners() {
         alert("Must maintain at least one active category.");
         return;
       }
-
       categories = categories.filter(cat => cat !== selectedCat);
       saveCategories(categories);
       renderCategoryDropdown();
@@ -921,45 +964,23 @@ export function initEventListeners() {
     });
   }
 
-  // View Switcher logic
+  // View Switchers
   const boardBtn = document.getElementById('view-board-btn');
   const prepareBtn = document.getElementById('view-prepare-btn');
   const calendarBtn = document.getElementById('view-calendar-btn');
   const tableBtn = document.getElementById('view-table-btn');
+  const developerBtn = document.getElementById('view-developer-btn');
   const automationsBtn = document.getElementById('view-automations-btn');
 
-  const viewBtns = [boardBtn, prepareBtn, calendarBtn, tableBtn, automationsBtn];
+  const viewBtns = [boardBtn, prepareBtn, calendarBtn, tableBtn, developerBtn, automationsBtn];
 
-  if (boardBtn && prepareBtn && calendarBtn && tableBtn && automationsBtn) {
-    boardBtn.addEventListener('click', () => {
-      currentViewMode = 'board';
-      updateViewButtons(boardBtn, viewBtns);
-      renderCurrentView();
-    });
-
-    prepareBtn.addEventListener('click', () => {
-      currentViewMode = 'prepare';
-      updateViewButtons(prepareBtn, viewBtns);
-      renderCurrentView();
-    });
-
-    calendarBtn.addEventListener('click', () => {
-      currentViewMode = 'calendar';
-      updateViewButtons(calendarBtn, viewBtns);
-      renderCurrentView();
-    });
-
-    tableBtn.addEventListener('click', () => {
-      currentViewMode = 'table';
-      updateViewButtons(tableBtn, viewBtns);
-      renderCurrentView();
-    });
-
-    automationsBtn.addEventListener('click', () => {
-      currentViewMode = 'automations';
-      updateViewButtons(automationsBtn, viewBtns);
-      renderCurrentView();
-    });
+  if (boardBtn && prepareBtn && calendarBtn && tableBtn && developerBtn && automationsBtn) {
+    boardBtn.addEventListener('click', () => { currentViewMode = 'board'; updateViewButtons(boardBtn, viewBtns); renderCurrentView(); });
+    prepareBtn.addEventListener('click', () => { currentViewMode = 'prepare'; updateViewButtons(prepareBtn, viewBtns); renderCurrentView(); });
+    calendarBtn.addEventListener('click', () => { currentViewMode = 'calendar'; updateViewButtons(calendarBtn, viewBtns); renderCurrentView(); });
+    tableBtn.addEventListener('click', () => { currentViewMode = 'table'; updateViewButtons(tableBtn, viewBtns); renderCurrentView(); });
+    developerBtn.addEventListener('click', () => { currentViewMode = 'developer'; updateViewButtons(developerBtn, viewBtns); renderCurrentView(); });
+    automationsBtn.addEventListener('click', () => { currentViewMode = 'automations'; updateViewButtons(automationsBtn, viewBtns); renderCurrentView(); });
   }
 }
 
