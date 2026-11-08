@@ -1,3 +1,4 @@
+import { format, parseISO, isPast } from 'date-fns';
 import { 
   getProjects, 
   getCurrentProjectIndex, 
@@ -73,7 +74,23 @@ function renderMissions() {
     card.className = `mission-card threat-${mission.threatLevel.toLowerCase()}`;
     if (mission.accomplished) card.classList.add('accomplished');
 
-    // Compact Header View (Title, Due Date, Threat Level badge, Expand & Delete controls)
+    // Format deadline using date-fns
+    let formattedDate = 'No Deadline';
+    let dateAlertClass = '';
+    if (mission.dueDate) {
+      try {
+        const parsedDate = parseISO(mission.dueDate);
+        formattedDate = format(parsedDate, 'PP'); // e.g., Nov 20, 2026
+        if (!mission.accomplished && isPast(parsedDate)) {
+          dateAlertClass = 'date-overdue';
+          formattedDate += ' ⚠️ OVERDUE';
+        }
+      } catch (e) {
+        formattedDate = mission.dueDate;
+      }
+    }
+
+    // Compact Header View
     const headerDiv = document.createElement('div');
     headerDiv.className = 'mission-compact-header';
     headerDiv.innerHTML = `
@@ -81,7 +98,7 @@ function renderMissions() {
         <input type="checkbox" data-index="${index}" ${mission.accomplished ? 'checked' : ''} class="accomplished-checkbox" />
         <span class="mission-title-text">${mission.title}</span>
         <span class="badge threat-badge">${mission.threatLevel}</span>
-        <span class="due-date-text">📅 ${mission.dueDate || 'No Deadline'}</span>
+        <span class="due-date-text ${dateAlertClass}">📅 ${formattedDate}</span>
       </div>
       <div class="mission-actions">
         <button class="expand-btn" data-index="${index}">Expand ▾</button>
@@ -89,7 +106,7 @@ function renderMissions() {
       </div>
     `;
 
-    // Expandable Details Drawer (Hidden by default)
+    // Expandable Details Drawer
     const detailsDiv = document.createElement('div');
     detailsDiv.className = 'mission-details-drawer hidden';
     detailsDiv.id = `details-drawer-${index}`;
@@ -131,7 +148,6 @@ function renderMissions() {
 }
 
 function attachMissionEventListeners() {
-  // Toggle Accomplished Status
   document.querySelectorAll('.accomplished-checkbox').forEach(box => {
     box.addEventListener('change', (e) => {
       const mIdx = e.target.getAttribute('data-index');
@@ -140,7 +156,6 @@ function attachMissionEventListeners() {
     });
   });
 
-  // Toggle Checklist Item
   document.querySelectorAll('.checklist-checkbox').forEach(box => {
     box.addEventListener('change', (e) => {
       const mIdx = e.target.getAttribute('data-mission-index');
@@ -149,7 +164,6 @@ function attachMissionEventListeners() {
     });
   });
 
-  // Expand / Collapse Details Drawer
   document.querySelectorAll('.expand-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mIdx = e.target.getAttribute('data-index');
@@ -159,7 +173,6 @@ function attachMissionEventListeners() {
     });
   });
 
-  // Delete Mission
   document.querySelectorAll('.delete-mission-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mIdx = e.target.getAttribute('data-index');
@@ -168,7 +181,6 @@ function attachMissionEventListeners() {
     });
   });
 
-  // Edit Mission (Inline Prompt/Form trigger)
   document.querySelectorAll('.edit-mission-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mIdx = e.target.getAttribute('data-index');
@@ -188,7 +200,6 @@ function attachMissionEventListeners() {
   });
 }
 
-// Setup Form Event Listeners
 export function initEventListeners() {
   const projectForm = document.getElementById('project-form');
   if (projectForm) {
