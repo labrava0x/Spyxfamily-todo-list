@@ -289,3 +289,17 @@ input:focus, select:focus, textarea:focus {
 .hidden {
   display: none;
 }
+
+/* Light Paper Dossier Theme */
+body.light-paper-theme {
+  background-color: #f3efe6 !important;
+  color: #2b1e10 !important;
+}
+body.light-paper-theme .panel {
+  background-color: #ffffff !important;
+  border-color: #bfa882 !important;
+}
+body.light-paper-theme .mission-card {
+  background-color: #fcf9f2 !important;
+  border-color: #c9b793 !important;
+}

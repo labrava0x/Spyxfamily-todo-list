@@ -67,7 +67,17 @@ export function initLayout() {
   app.innerHTML = `
     <!-- Cinematic Header with Top Secret Stamp & View Switchers -->
     <header class="title-card-header" style="text-align: center; margin-bottom: 2rem;">
-      <div class="classified-stamp" style="display: inline-block; border: 3px double #8b1e1e; color: #8b1e1e; padding: 0.3rem 1.2rem; font-family: 'Anton', sans-serif; font-size: 1.1rem; letter-spacing: 3px; transform: rotate(-3deg); background: #eedcb9; margin-bottom: 0.8rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">TOP SECRET</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto 0.5rem auto; padding: 0 1rem;">
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" id="theme-toggle-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #2b4c48; color: #fff;">🌓 Toggle Theme</button>
+          <button type="button" id="export-json-btn" class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #4b6b54; color: #fff;">💾 Export Backup</button>
+          <label class="secondary-btn" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; background: #8b1e1e; color: #fff; cursor: pointer; margin: 0;">
+            📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
+          </label>
+        </div>
+        <div class="classified-stamp" style="border: 3px double #8b1e1e; color: #8b1e1e; padding: 0.2rem 1rem; font-family: 'Anton', sans-serif; font-size: 1rem; letter-spacing: 3px; transform: rotate(-2deg); background: #eedcb9; box-shadow: 2px 2px 0px rgba(0,0,0,0.2);">TOP SECRET</div>
+        <div style="font-size: 0.8rem; font-family: 'Special Elite', monospace; color: #5c4d37;">Shortcuts: Ctrl+N, 1-6</div>
+      </div>
       <div>
         <h1>CLASSIFIED DOSSIERS</h1>
       </div>
@@ -1027,6 +1037,87 @@ export function initEventListeners() {
       if (folderTitle) folderTitle.textContent = 'SSS SURVEILLANCE ARCHIVE';
     });
   }
+
+  // Theme Toggle & Backup
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-paper-theme');
+      const isLight = document.body.classList.contains('light-paper-theme');
+      localStorage.setItem('wise_theme_light', isLight);
+    });
+    if (localStorage.getItem('wise_theme_light') === 'true') {
+      document.body.classList.add('light-paper-theme');
+    }
+  }
+
+  const exportJsonBtn = document.getElementById('export-json-btn');
+  if (exportJsonBtn) {
+    exportJsonBtn.addEventListener('click', () => {
+      const data = {
+        projects: getProjects(),
+        categories: getCategories(),
+        automations: getAutomations(),
+        comms: getCommsConfig()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wise-dossier-backup-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  const importJsonFile = document.getElementById('import-json-file');
+  if (importJsonFile) {
+    importJsonFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        try {
+          const parsed = JSON.parse(uploadEvent.target.result);
+          if (parsed.projects) localStorage.setItem('wise_projects', JSON.stringify(parsed.projects));
+          if (parsed.categories) localStorage.setItem('wise_categories', JSON.stringify(parsed.categories));
+          if (parsed.automations) localStorage.setItem('wise_automations', JSON.stringify(parsed.automations));
+          if (parsed.comms) localStorage.setItem('wise_comms_config', JSON.stringify(parsed.comms));
+          alert("✅ Dossier backup successfully restored!");
+          renderApp();
+        } catch (err) {
+          alert("❌ Invalid backup JSON format.");
+        }
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  // Global Keyboard Shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      const titleInput = document.getElementById('mission-title');
+      if (titleInput) {
+        currentViewMode = 'board';
+        updateViewButtons(boardBtn, viewBtns);
+        renderCurrentView();
+        titleInput.focus();
+      }
+    } else if (e.ctrlKey && e.key === '1') {
+      e.preventDefault(); boardBtn.click();
+    } else if (e.ctrlKey && e.key === '2') {
+      e.preventDefault(); prepareBtn.click();
+    } else if (e.ctrlKey && e.key === '3') {
+      e.preventDefault(); insightsBtn.click();
+    } else if (e.ctrlKey && e.key === '4') {
+      e.preventDefault(); calendarBtn.click();
+    } else if (e.ctrlKey && e.key === '5') {
+      e.preventDefault(); tableBtn.click();
+    } else if (e.ctrlKey && e.key === '6') {
+      e.preventDefault(); developerBtn.click();
+    }
+  });
 
   // View Switchers
   const boardBtn = document.getElementById('view-board-btn');
