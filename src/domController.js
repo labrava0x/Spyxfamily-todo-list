@@ -14,7 +14,7 @@ import {
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
 let currentStatusFilter = 'all';
-let currentViewMode = 'board'; // 'board', 'prepare', 'calendar', 'table', 'automations', 'developer'
+let currentViewMode = 'board'; // 'board', 'prepare', 'calendar', 'table', 'insights', 'developer', 'automations'
 
 export function getCategories() {
   const saved = localStorage.getItem('wise_categories');
@@ -80,9 +80,10 @@ export function initLayout() {
         <div class="view-switchers" style="display: flex; gap: 0.3rem; background: #1c3532; padding: 0.2rem; border-radius: 4px; border: 1px solid #456d68; flex-wrap: wrap;">
           <button type="button" id="view-board-btn" class="view-tab-btn active" style="background: #e8c872; color: #2b1e10; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">Board</button>
           <button type="button" id="view-prepare-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">🎯 Prepare</button>
+          <button type="button" id="view-insights-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">📊 Insights</button>
           <button type="button" id="view-calendar-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">Calendar</button>
           <button type="button" id="view-table-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">Table</button>
-          <button type="button" id="view-developer-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">💻 Developer Tools</button>
+          <button type="button" id="view-developer-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">💻 Dev</button>
           <button type="button" id="view-automations-btn" class="view-tab-btn" style="background: transparent; color: #a3c1bd; border: none; padding: 0.3rem 0.5rem; font-family: 'Anton', sans-serif; cursor: pointer;">⚡ Comms</button>
         </div>
       </div>
@@ -216,6 +217,12 @@ function renderCurrentView() {
     if (viewHeading) viewHeading.textContent = 'Mission Preparation & Scripts';
     if (filterContainer) filterContainer.style.display = 'none';
     renderPrepareMissionView(container);
+  } else if (currentViewMode === 'insights') {
+    if (creationSection) creationSection.style.display = 'none';
+    if (folderTab) folderTab.textContent = 'OPERATION INSIGHTS';
+    if (viewHeading) viewHeading.textContent = 'Project Health & Analytics';
+    if (filterContainer) filterContainer.style.display = 'none';
+    renderInsightsView(container);
   } else if (currentViewMode === 'calendar') {
     if (creationSection) creationSection.style.display = 'none';
     if (folderTab) folderTab.textContent = 'CALENDAR VIEW';
@@ -420,6 +427,66 @@ function renderBoardView(container) {
   attachMissionEventListeners();
 }
 
+function renderInsightsView(container) {
+  const projects = getProjects();
+  const currentIndex = getCurrentProjectIndex();
+  const activeProject = projects[currentIndex];
+
+  if (!activeProject) {
+    container.innerHTML = '<p class="no-missions">No active operation selected.</p>';
+    return;
+  }
+
+  const totalMissions = activeProject.missions.length;
+  const completedMissions = activeProject.missions.filter(m => m.accomplished).length;
+  const overdueMissions = activeProject.missions.filter(m => !m.accomplished && m.dueDate && isPast(parseISO(m.dueDate))).length;
+  
+  let healthStatus = 'Excellent 🟢';
+  let healthDesc = 'This operation is in excellent health, with final cut moving steadily and tasks on track. No tasks are overdue!';
+
+  if (overdueMissions > 0) {
+    healthStatus = 'Critical 🔴';
+    healthDesc = `Warning! There are ${overdueMissions} overdue mission(s) requiring immediate operative intervention.`;
+  } else if (totalMissions > 0 && (completedMissions / totalMissions) < 0.4) {
+    healthStatus = 'Good 🟡';
+    healthDesc = 'Operation is progressing steadily, but several intelligence milestones remain pending.';
+  }
+
+  container.innerHTML = `
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      <div style="background: #f7f1e1; padding: 1.5rem; border: 1px solid #9c8a6b; border-top: 4px solid #8b1e1e; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.3rem; color: #8b1e1e;">📊 Operation Health: ${healthStatus}</h3>
+        <p style="font-size: 0.95rem; line-height: 1.5; color: #2b1e10; margin-top: 0.5rem;">${healthDesc}</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.2rem;">
+          <div style="background: #fff; padding: 0.8rem; border: 1px solid #d6c098; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; font-family: 'Anton', sans-serif; color: #2b4c48;">${totalMissions}</div>
+            <div style="font-size: 0.8rem; color: #5c4d37;">Total Missions</div>
+          </div>
+          <div style="background: #fff; padding: 0.8rem; border: 1px solid #d6c098; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; font-family: 'Anton', sans-serif; color: #4b6b54;">${completedMissions}</div>
+            <div style="font-size: 0.8rem; color: #5c4d37;">Fulfilled</div>
+          </div>
+          <div style="background: #fff; padding: 0.8rem; border: 1px solid #d6c098; text-align: center;">
+            <div style="font-size: 1.5rem; font-weight: bold; font-family: 'Anton', sans-serif; color: #8b1e1e;">${overdueMissions}</div>
+            <div style="font-size: 0.8rem; color: #5c4d37;">Overdue / Critical</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b;">
+        <h4 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.1rem; color: #2b4c48;">💡 Intelligence Summary & Activity Stream</h4>
+        <p style="font-size: 0.85rem; color: #5c4d37; margin-bottom: 0.8rem;">Keep work moving forward by including descriptions, comments, and history with every task and project.</p>
+        <ul style="margin: 0; padding-left: 1.2rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <li>Active Dossier: <strong>${activeProject.name}</strong></li>
+          <li>Last Updated: <strong>Just now</strong></li>
+          <li>Agent Status: <strong>Ready for deployment</strong></li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
 function renderPrepareMissionView(container) {
   const projects = getProjects();
   const currentIndex = getCurrentProjectIndex();
@@ -591,7 +658,6 @@ function renderDeveloperView(container) {
   const comms = getCommsConfig();
   container.innerHTML = `
     <div class="developer-dashboard" style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- API Card -->
       <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #8b1e1e;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e;">🔌 API Integration</h3>
         <p style="font-size: 0.85rem; margin-bottom: 0.8rem;">Automate routines and query dossier missions programmatically.</p>
@@ -601,7 +667,6 @@ function renderDeveloperView(container) {
         </div>
       </div>
 
-      <!-- CLI Card -->
       <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #2b4c48;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #2b4c48;">💻 Command Line Interface (CLI)</h3>
         <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Run daily operations directly from your Linux terminal:</p>
@@ -609,7 +674,6 @@ function renderDeveloperView(container) {
 wise mission list --active</pre>
       </div>
 
-      <!-- MCP Server Card -->
       <div style="background: #f7f1e1; padding: 1.2rem; border: 1px solid #9c8a6b; border-top: 4px solid #b8973e;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e;">🤖 MCP Server (Model Context Protocol)</h3>
         <p style="font-size: 0.85rem; margin-bottom: 0.8rem;">Allow AI agents to read, write, and manage your intelligence dossiers securely.</p>
@@ -967,16 +1031,18 @@ export function initEventListeners() {
   // View Switchers
   const boardBtn = document.getElementById('view-board-btn');
   const prepareBtn = document.getElementById('view-prepare-btn');
+  const insightsBtn = document.getElementById('view-insights-btn');
   const calendarBtn = document.getElementById('view-calendar-btn');
   const tableBtn = document.getElementById('view-table-btn');
   const developerBtn = document.getElementById('view-developer-btn');
   const automationsBtn = document.getElementById('view-automations-btn');
 
-  const viewBtns = [boardBtn, prepareBtn, calendarBtn, tableBtn, developerBtn, automationsBtn];
+  const viewBtns = [boardBtn, prepareBtn, insightsBtn, calendarBtn, tableBtn, developerBtn, automationsBtn];
 
-  if (boardBtn && prepareBtn && calendarBtn && tableBtn && developerBtn && automationsBtn) {
+  if (boardBtn && prepareBtn && insightsBtn && calendarBtn && tableBtn && developerBtn && automationsBtn) {
     boardBtn.addEventListener('click', () => { currentViewMode = 'board'; updateViewButtons(boardBtn, viewBtns); renderCurrentView(); });
     prepareBtn.addEventListener('click', () => { currentViewMode = 'prepare'; updateViewButtons(prepareBtn, viewBtns); renderCurrentView(); });
+    insightsBtn.addEventListener('click', () => { currentViewMode = 'insights'; updateViewButtons(insightsBtn, viewBtns); renderCurrentView(); });
     calendarBtn.addEventListener('click', () => { currentViewMode = 'calendar'; updateViewButtons(calendarBtn, viewBtns); renderCurrentView(); });
     tableBtn.addEventListener('click', () => { currentViewMode = 'table'; updateViewButtons(tableBtn, viewBtns); renderCurrentView(); });
     developerBtn.addEventListener('click', () => { currentViewMode = 'developer'; updateViewButtons(developerBtn, viewBtns); renderCurrentView(); });
