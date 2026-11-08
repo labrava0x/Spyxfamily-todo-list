@@ -1,37 +1,75 @@
 import { Mission } from './mission.js';
+import { Project } from './project.js';
 
-// Initial missions with notes and checklists
-let missions = [
-  new Mission(
-    "Infiltrate Eden Academy", 
-    "Secure proximity to target's son.", 
-    "2026-11-20", 
-    "Critical", 
-    "Must maintain elegant demeanor at all times.", 
-    ["Secure bespoke suit", "Memorize aristocratic etiquette", "Locate target's classroom"]
-  ),
-  new Mission(
-    "Secure Stella Star", 
-    "Earn academic distinction to impress Loid.", 
-    "2026-12-05", 
-    "Medium", 
-    "Avoid getting a Bolt if possible.", 
-    ["Study classical literature", "Pass midterms"]
-  )
+// Initialize projects array with a default project
+let projects = [
+  new Project("Default Operations")
 ];
 
-// Function to render all missions to the DOM
+// Add a sample mission to the default project
+projects[0].addMission(new Mission(
+  "Infiltrate Eden Academy", 
+  "Secure proximity to target's son.", 
+  "2026-11-20", 
+  "Critical", 
+  "Must maintain elegant demeanor.", 
+  [{ text: "Secure bespoke suit", completed: false }]
+));
+
+let currentProjectIndex = 0;
+
+// Render project navigation tabs/selector
+function renderProjects() {
+  const navContainer = document.getElementById('project-nav');
+  if (!navContainer) return;
+
+  navContainer.innerHTML = '';
+  projects.forEach((project, index) => {
+    const btn = document.createElement('button');
+    btn.textContent = project.name;
+    btn.className = index === currentProjectIndex ? 'project-btn active' : 'project-btn';
+    btn.addEventListener('click', () => {
+      currentProjectIndex = index;
+      renderProjects();
+      renderMissions();
+      updateProjectDropdown();
+    });
+    navContainer.appendChild(btn);
+  });
+}
+
+// Update the select dropdown inside the form so users can choose the target project
+function updateProjectDropdown() {
+  const select = document.getElementById('mission-project');
+  if (!select) return;
+
+  select.innerHTML = '';
+  projects.forEach((project, index) => {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = project.name;
+    select.appendChild(option);
+  });
+  select.value = currentProjectIndex;
+}
+
+// Function to render all missions for the currently active project
 function renderMissions() {
   const container = document.getElementById('mission-container');
   if (!container) return;
   
-  container.innerHTML = ''; // Clear container before re-rendering
+  container.innerHTML = ''; 
 
-  missions.forEach((mission, index) => {
+  const activeProject = projects[currentProjectIndex];
+  if (!activeProject || activeProject.missions.length === 0) {
+    container.innerHTML = '<p>No active missions in this sector.</p>';
+    return;
+  }
+
+  activeProject.missions.forEach((mission, index) => {
     const card = document.createElement('div');
     card.className = 'mission-card';
     
-    // Build checklist HTML if items exist
     let checklistHtml = '';
     if (mission.checklist && mission.checklist.length > 0) {
       checklistHtml = '<ul>';
@@ -65,28 +103,45 @@ function renderMissions() {
     container.appendChild(card);
   });
 
-  // Attach event listeners to main mission accomplishment checkboxes
+  // Attach event listeners
   document.querySelectorAll('.accomplished-checkbox').forEach(box => {
     box.addEventListener('change', (e) => {
       const idx = e.target.getAttribute('data-index');
-      missions[idx].toggleStatus();
+      activeProject.missions[idx].toggleStatus();
     });
   });
 
-  // Attach event listeners to checklist checkboxes
   document.querySelectorAll('.checklist-checkbox').forEach(box => {
     box.addEventListener('change', (e) => {
       const mIdx = e.target.getAttribute('data-mission-index');
       const cIdx = e.target.getAttribute('data-check-index');
-      missions[mIdx].toggleChecklistItem(cIdx);
+      activeProject.missions[mIdx].toggleChecklistItem(cIdx);
     });
   });
 }
 
-// Handle form submission to add a new mission
-const form = document.getElementById('mission-form');
-if (form) {
-  form.addEventListener('submit', (e) => {
+// Handle project creation form
+const projectForm = document.getElementById('project-form');
+if (projectForm) {
+  projectForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const projectNameInput = document.getElementById('project-name');
+    const name = projectNameInput.value.trim();
+    if (name) {
+      projects.push(new Project(name));
+      currentProjectIndex = projects.length - 1;
+      projectForm.reset();
+      renderProjects();
+      renderMissions();
+      updateProjectDropdown();
+    }
+  });
+}
+
+// Handle mission creation form
+const missionForm = document.getElementById('mission-form');
+if (missionForm) {
+  missionForm.addEventListener('submit', (e) => {
     e.preventDefault();
     
     const title = document.getElementById('mission-title').value;
@@ -94,14 +149,20 @@ if (form) {
     const date = document.getElementById('mission-date').value;
     const threat = document.getElementById('mission-threat').value;
     const notes = document.getElementById('mission-notes').value;
+    const targetProjectIndex = document.getElementById('mission-project').value;
 
     const newMission = new Mission(title, desc, date, threat, notes, []);
-    missions.push(newMission);
+    projects[targetProjectIndex].addMission(newMission);
     
+    currentProjectIndex = Number(targetProjectIndex);
+    renderProjects();
     renderMissions();
-    form.reset();
+    missionForm.reset();
+    updateProjectDropdown();
   });
 }
 
-// Initial render on load
+// Initial load
+renderProjects();
 renderMissions();
+updateProjectDropdown();

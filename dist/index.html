@@ -9,10 +9,27 @@
   <main id="content">
     <h1>Operation Strix: Mission Control</h1>
     
+    <!-- Project Navigation Section -->
+    <section id="projects-section">
+      <h2>Sectors / Projects</h2>
+      <div id="project-nav"></div>
+      
+      <form id="project-form" style="margin-top: 10px;">
+        <input type="text" id="project-name" placeholder="New Sector Name" required>
+        <button type="submit">Establish Sector</button>
+      </form>
+    </section>
+
+    <hr>
+
     <!-- Mission Creation Form -->
     <section id="form-section">
       <h2>Dispatch New Mission</h2>
       <form id="mission-form">
+        <div>
+          <label for="mission-project">Target Sector:</label>
+          <select id="mission-project"></select>
+        </div>
         <div>
           <label for="mission-title">Mission Title:</label>
           <input type="text" id="mission-title" required>
