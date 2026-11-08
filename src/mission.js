@@ -3,9 +3,9 @@ export class Mission {
     this.title = title;
     this.description = description;
     this.dueDate = dueDate;
-    this.threatLevel = threatLevel; // Low, Medium, Critical
+    this.threatLevel = threatLevel;
     this.notes = notes;
-    this.checklist = checklist; // Array of strings or objects
+    this.checklist = checklist;
     this.accomplished = false;
   }
 
