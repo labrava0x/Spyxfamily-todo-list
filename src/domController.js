@@ -4,6 +4,7 @@ import {
   getCurrentProjectIndex, 
   setCurrentProjectIndex, 
   addProject, 
+  deleteProject,
   addMissionToCurrentProject, 
   deleteMission,
   updateMission,
@@ -26,6 +27,9 @@ function renderProjectsNav() {
 
   navContainer.innerHTML = '';
   projects.forEach((project, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'project-tab-wrapper';
+
     const btn = document.createElement('button');
     btn.textContent = project.name;
     btn.className = index === currentIndex ? 'project-btn active' : 'project-btn';
@@ -33,7 +37,20 @@ function renderProjectsNav() {
       setCurrentProjectIndex(index);
       renderApp();
     });
-    navContainer.appendChild(btn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-project-btn';
+    delBtn.textContent = '✕';
+    delBtn.title = 'Close Sector';
+    delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteProject(index);
+      renderApp();
+    });
+
+    wrapper.appendChild(btn);
+    wrapper.appendChild(delBtn);
+    navContainer.appendChild(wrapper);
   });
 }
 
@@ -74,13 +91,12 @@ function renderMissions() {
     card.className = `mission-card threat-${mission.threatLevel.toLowerCase()}`;
     if (mission.accomplished) card.classList.add('accomplished');
 
-    // Format deadline using date-fns
     let formattedDate = 'No Deadline';
     let dateAlertClass = '';
     if (mission.dueDate) {
       try {
         const parsedDate = parseISO(mission.dueDate);
-        formattedDate = format(parsedDate, 'PP'); // e.g., Nov 20, 2026
+        formattedDate = format(parsedDate, 'PP');
         if (!mission.accomplished && isPast(parsedDate)) {
           dateAlertClass = 'date-overdue';
           formattedDate += ' ⚠️ OVERDUE';
@@ -90,7 +106,6 @@ function renderMissions() {
       }
     }
 
-    // Compact Header View
     const headerDiv = document.createElement('div');
     headerDiv.className = 'mission-compact-header';
     headerDiv.innerHTML = `
@@ -106,7 +121,6 @@ function renderMissions() {
       </div>
     `;
 
-    // Expandable Details Drawer
     const detailsDiv = document.createElement('div');
     detailsDiv.className = 'mission-details-drawer hidden';
     detailsDiv.id = `details-drawer-${index}`;

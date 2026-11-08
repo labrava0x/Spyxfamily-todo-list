@@ -4,14 +4,31 @@ import { Mission } from './missionItem.js';
 let projects = [];
 let currentProjectIndex = 0;
 
+function isStorageAvailable() {
+  try {
+    const test = '__storage_test__';
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 export function initStorage() {
+  if (!isStorageAvailable()) {
+    console.warn("localStorage is unavailable. Using temporary memory state.");
+    loadDefaultData();
+    return;
+  }
+
   const savedData = localStorage.getItem('wise_projects');
   if (savedData) {
     try {
       const parsedData = JSON.parse(savedData);
       projects = parsedData.map(pData => {
         const project = new Project(pData.name);
-        project.missions = pData.missions.map(m => {
+        project.missions = (pData.missions || []).map(m => {
           const mission = new Mission(
             m.title, 
             m.description, 
@@ -20,7 +37,7 @@ export function initStorage() {
             m.notes, 
             m.checklist || []
           );
-          mission.accomplished = m.accomplished;
+          mission.accomplished = m.accomplished || false;
           return mission;
         });
         return project;
@@ -49,8 +66,10 @@ function loadDefaultData() {
   saveStorage();
 }
 
-function saveStorage() {
-  localStorage.setItem('wise_projects', JSON.stringify(projects));
+export function saveStorage() {
+  if (isStorageAvailable()) {
+    localStorage.setItem('wise_projects', JSON.stringify(projects));
+  }
 }
 
 export function getProjects() {
@@ -68,6 +87,18 @@ export function setCurrentProjectIndex(index) {
 export function addProject(name) {
   projects.push(new Project(name));
   currentProjectIndex = projects.length - 1;
+  saveStorage();
+}
+
+export function deleteProject(index) {
+  if (projects.length <= 1) {
+    alert("Operation sector cannot be empty. Maintain at least one active sector.");
+    return;
+  }
+  projects.splice(index, 1);
+  if (currentProjectIndex >= projects.length) {
+    currentProjectIndex = projects.length - 1;
+  }
   saveStorage();
 }
 
