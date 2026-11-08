@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operation Strix | Mission Control</title>
+</head>
+<body>
+  <main id="content">
+    <h1>Operation Strix: Mission Control</h1>
+    
+    <!-- Mission Creation Form -->
+    <section id="form-section">
+      <h2>Dispatch New Mission</h2>
+      <form id="mission-form">
+        <div>
+          <label for="mission-title">Mission Title:</label>
+          <input type="text" id="mission-title" required>
+        </div>
+        <div>
+          <label for="mission-desc">Description:</label>
+          <input type="text" id="mission-desc" required>
+        </div>
+        <div>
+          <label for="mission-date">Deadline:</label>
+          <input type="date" id="mission-date" required>
+        </div>
+        <div>
+          <label for="mission-threat">Threat Level:</label>
+          <select id="mission-threat">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+        <div>
+          <label for="mission-notes">Field Notes:</label>
+          <textarea id="mission-notes" rows="2"></textarea>
+        </div>
+        <button type="submit">Dispatch Mission</button>
+      </form>
+    </section>
+
+    <hr>
+
+    <!-- Mission Container -->
+    <section>
+      <h2>Active Missions</h2>
+      <div id="mission-container"></div>
+    </section>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
