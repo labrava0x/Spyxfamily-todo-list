@@ -3,6 +3,16 @@ import { Mission } from './missionItem.js';
 
 let projects = [];
 let currentProjectIndex = 0;
+let currentAgency = 'WISE'; // Tracks active agency: 'WISE' or 'SSS'
+
+function getStorageKey() {
+  return currentAgency === 'SSS' ? 'sss_projects' : 'wise_projects';
+}
+
+export function setActiveAgency(agency) {
+  currentAgency = agency;
+  initStorage();
+}
 
 function isStorageAvailable() {
   try {
@@ -22,7 +32,9 @@ export function initStorage() {
     return;
   }
 
-  const savedData = localStorage.getItem('wise_projects');
+  const storageKey = getStorageKey();
+  const savedData = localStorage.getItem(storageKey);
+  
   if (savedData) {
     try {
       const parsedData = JSON.parse(savedData);
@@ -38,10 +50,16 @@ export function initStorage() {
             m.checklist || []
           );
           mission.accomplished = m.accomplished || false;
+          mission.spreadsheet = m.spreadsheet || '';
+          mission.attachment = m.attachment || '';
+          mission.imageBase64 = m.imageBase64 || '';
           return mission;
         });
         return project;
       });
+      if (currentProjectIndex >= projects.length) {
+        currentProjectIndex = 0;
+      }
     } catch (e) {
       console.error("Failed to parse local storage data, loading defaults.", e);
       loadDefaultData();
@@ -53,22 +71,36 @@ export function initStorage() {
 
 function loadDefaultData() {
   projects = [];
-  const defaultProj = new Project("WISE Operations");
-  defaultProj.addMission(new Mission(
-    "Infiltrate Eden Academy", 
-    "Secure proximity to target's son.", 
-    "2026-11-20", 
-    "Critical", 
-    "Must maintain elegant demeanor.", 
-    [{ text: "Secure bespoke suit", completed: false }]
-  ));
+  const defaultName = currentAgency === 'SSS' ? 'SSS Operations (Yuri)' : 'WISE Operations';
+  const defaultProj = new Project(defaultName);
+  
+  if (currentAgency === 'WISE') {
+    defaultProj.addMission(new Mission(
+      "Infiltrate Eden Academy", 
+      "Secure proximity to target's son.", 
+      "2026-11-20", 
+      "Critical", 
+      "Must maintain elegant demeanor.", 
+      [{ text: "Secure bespoke suit", completed: false }]
+    ));
+  } else {
+    defaultProj.addMission(new Mission(
+      "Monitor Twilight", 
+      "Keep a close eye on Loid Forger's movements.", 
+      "2026-11-25", 
+      "High", 
+      "Protect Yor at all costs!", 
+      [{ text: "Review surveillance logs", completed: false }]
+    ));
+  }
+  
   projects.push(defaultProj);
   saveStorage();
 }
 
 export function saveStorage() {
   if (isStorageAvailable()) {
-    localStorage.setItem('wise_projects', JSON.stringify(projects));
+    localStorage.setItem(getStorageKey(), JSON.stringify(projects));
   }
 }
 
@@ -102,8 +134,20 @@ export function deleteProject(index) {
   saveStorage();
 }
 
-export function addMissionToCurrentProject(title, desc, date, threat, notes) {
-  const newMission = new Mission(title, desc, date, threat, notes, []);
+export function addMissionToCurrentProject(missionData) {
+  const newMission = new Mission(
+    missionData.title,
+    missionData.description,
+    missionData.dueDate,
+    missionData.threatLevel,
+    missionData.notes,
+    missionData.checklist || []
+  );
+  newMission.accomplished = missionData.accomplished || false;
+  if (missionData.spreadsheet) newMission.spreadsheet = missionData.spreadsheet;
+  if (missionData.attachment) newMission.attachment = missionData.attachment;
+  if (missionData.imageBase64) newMission.imageBase64 = missionData.imageBase64;
+
   projects[currentProjectIndex].addMission(newMission);
   saveStorage();
 }
@@ -130,3 +174,36 @@ export function toggleChecklistItem(projectIndex, missionIndex, checkIndex) {
   projects[projectIndex].missions[missionIndex].toggleChecklistItem(checkIndex);
   saveStorage();
 }
+
+// --- Comms, Automations & Category Storage ---
+
+export function getCommsConfig() {
+  const key = currentAgency === 'SSS' ? 'sss_comms_config' : 'wise_comms_config';
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : {
+    mcpEndpoint: '',
+    apiKey: '',
+    telegramToken: '',
+    telegramChatId: '',
+    discordWebhook: ''
+  };
+}
+
+export function saveCommsConfig(config) {
+  const key = currentAgency === 'SSS' ? 'sss_comms_config' : 'wise_comms_config';
+  localStorage.setItem(key, JSON.stringify(config));
+}
+
+export function getAutomations() {
+  const key = currentAgency === 'SSS' ? 'sss_automations' : 'wise_automations';
+  const data = localStorage.getItem(key);
+  return data ? JSON.parse(data) : [];
+}
+
+export function saveAutomations(automations) {
+  const key = currentAgency === 'SSS' ? 'sss_automations' : 'wise_automations';
+  localStorage.setItem(key, JSON.stringify(automations));
+}
+
+// Automatically sync agency state from localStorage on script load
+setActiveAgency(localStorage.getItem('active_agency') || 'WISE');

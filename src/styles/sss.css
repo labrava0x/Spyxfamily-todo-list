@@ -1,0 +1,170 @@
+/* --- SSS (YURI) AGENCY THEME: PITCH-BLACK DESK, MANILA DOSSIERS, & CRIMSON ACCENTS --- */
+
+body.sss-agency-theme {
+  background-color: #000000 !important;
+  background-image: none !important;
+  color: #ffcccc !important;
+}
+
+/* SSS Title Header - Manila stock, crisp black text, crimson border */
+body.sss-agency-theme h1 {
+  background-color: #dfc28f !important;
+  color: #000000 !important;
+  border: 3px solid #cc0000 !important;
+  box-shadow: 5px 5px 0px #000000 !important;
+  font-family: 'Anton', sans-serif;
+  font-size: 4.2rem !important;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+/* SSS Agency Header Tabs */
+body.sss-agency-theme .agency-tab-btn {
+  background-color: #0a0000 !important;
+  color: #ff9999 !important;
+  border: 1px solid #800000 !important;
+}
+
+body.sss-agency-theme .agency-tab-btn.active {
+  background-color: #dfc28f !important;
+  color: #000000 !important; /* Forced black text */
+  border-color: #cc0000 !important;
+  box-shadow: 0px -4px 0px #ff1a1a !important;
+  font-weight: bold;
+}
+
+/* SSS Dossier Folders & Panels - Thick Physical Manila Stock Framed in Crimson */
+body.sss-agency-theme .dossier-folder, 
+body.sss-agency-theme .panel {
+  background-color: #dfc28f !important;
+  border: 3px solid #cc0000 !important;
+  box-shadow: 14px 14px 0px rgba(0, 0, 0, 0.95) !important;
+  color: #000000 !important;
+}
+
+/* Clean Inner Paper */
+body.sss-agency-theme .dossier-paper {
+  background-color: #f7f1e3 !important;
+  border: 1px solid #c4b087 !important;
+  color: #000000 !important;
+}
+
+/* SSS Protruding Tab Shape & Label */
+body.sss-agency-theme .dossier-folder::before,
+body.sss-agency-theme .panel::before {
+  content: "SSS ARCHIVES // TOP SECRET" !important;
+  position: absolute !important;
+  top: -32px !important;
+  left: 30px !important;
+  background: #dfc28f !important;
+  color: #cc0000 !important;
+  padding: 6px 18px !important;
+  font-size: 0.8rem !important;
+  font-weight: bold !important;
+  border-top-left-radius: 6px !important;
+  border-top-right-radius: 6px !important;
+  border: 2px solid #cc0000 !important;
+  border-bottom: none !important;
+  letter-spacing: 1px !important;
+  box-shadow: none !important;
+}
+
+body.sss-agency-theme h2 {
+  color: #cc0000 !important;
+  border-bottom: 2px solid #cc0000 !important;
+}
+
+body.sss-agency-theme label {
+  color: #800000 !important;
+  font-weight: bold;
+}
+
+body.sss-agency-theme p {
+  color: #000000 !important;
+}
+
+/* SSS Form Inputs */
+body.sss-agency-theme input, 
+body.sss-agency-theme select, 
+body.sss-agency-theme textarea {
+  background-color: #fcf8ee !important;
+  border: 1px solid #cc0000 !important;
+  color: #000000 !important;
+}
+
+body.sss-agency-theme input:focus, 
+body.sss-agency-theme select:focus, 
+body.sss-agency-theme textarea:focus {
+  outline: none;
+  border-color: #ff1a1a !important;
+  box-shadow: 0 0 0 2px rgba(255, 26, 26, 0.4);
+}
+
+/* SSS Primary Action Buttons - Vibrant Crimson with Black Text */
+body.sss-agency-theme .primary-btn.dossier-btn {
+  background-color: #dfc28f !important; /* Manila stock button styling */
+  color: #000000 !important; /* Forced black text */
+  border: 2px solid #cc0000 !important;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+body.sss-agency-theme .primary-btn.dossier-btn:hover {
+  background-color: #eedcb9 !important;
+}
+
+/* Delete and Save Action Buttons */
+body.sss-agency-theme button#delete-category-btn,
+body.sss-agency-theme button[id*="delete"],
+body.sss-agency-theme button[type="submit"],
+body.sss-agency-theme .secondary-btn {
+  background-color: #dfc28f !important;
+  color: #000000 !important; /* Forced black text */
+  border: 2px solid #cc0000 !important;
+  font-weight: bold;
+}
+
+body.sss-agency-theme button#delete-category-btn:hover,
+body.sss-agency-theme button[type="submit"]:hover,
+body.sss-agency-theme .secondary-btn:hover {
+  background-color: #eedcb9 !important;
+}
+
+/* SSS Surveillance Mission Cards */
+body.sss-agency-theme .mission-card {
+  background: #fcf8ee !important;
+  border: 1px solid #cc0000 !important;
+  border-left: 6px solid #cc0000 !important;
+  color: #000000 !important;
+}
+
+body.sss-agency-theme .mission-card.accomplished {
+  opacity: 0.6;
+  border-left-color: #660000 !important;
+  background: #d4bc8c !important;
+}
+
+body.sss-agency-theme .mission-card .mission-title-text {
+  color: #cc0000 !important;
+}
+
+body.sss-agency-theme .no-missions {
+  background: #fcf8ee !important;
+  border: 1px dashed #cc0000 !important;
+  color: #cc0000 !important;
+}
+
+/* SSS Project Tabs */
+body.sss-agency-theme .project-btn {
+  background: #d4bc8c !important;
+  border: 1px solid #cc0000 !important;
+  color: #000000 !important;
+}
+
+body.sss-agency-theme .project-btn.active {
+  background: #dfc28f !important;
+  color: #000000 !important;
+  border-color: #ff1a1a !important;
+  font-weight: bold;
+}

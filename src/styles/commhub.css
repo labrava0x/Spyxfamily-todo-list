@@ -1,0 +1,130 @@
+/* ==========================================
+   CENTRAL COMMS HUB: BOND & ANYA THEME
+   ========================================== */
+
+body {
+  background-color: #f4efe6 !important; /* Bond's soft cream-white fur tone */
+  color: #2b2520 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* Force space below agency tabs and center Bond's bow tie */
+.bond-bowtie-divider {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  margin: 2rem auto 2.5rem auto !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 20 !important;
+}
+
+.bond-bowtie-svg {
+  width: 140px !important;
+  height: 70px !important;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) !important;
+  display: block !important;
+}
+
+.bowtie-wing {
+  fill: #1b1b1b !important;
+  stroke: #8c7a5b !important;
+  stroke-width: 2px !important;
+}
+
+.bowtie-center {
+  fill: #111111 !important;
+  stroke: #8c7a5b !important;
+  stroke-width: 2px !important;
+}
+
+/* Central Operations Terminal Container */
+.dossier-folder.comms-hub-folder {
+  background-color: #12151c !important;
+  border: 2px solid #8c7a5b !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4) !important;
+  color: #e2ded0 !important;
+  border-radius: 6px;
+  max-width: 1400px;
+  margin: 2rem auto 2rem auto !important;
+  padding: 2rem;
+}
+
+/* Gold replaced with Anya's signature pastel pink hair color */
+.comms-hub-folder h2 {
+  font-family: 'Anton', sans-serif, sans-serif;
+  letter-spacing: 2px;
+  color: #f4a4b8 !important;
+  border-bottom: 2px dashed #f4a4b8 !important;
+  padding-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+/* Bond's Future-Vision Status Banner (Accented with Anya's hair color) */
+.bond-comms-banner {
+  background: linear-gradient(135deg, #1c222b, #12151a) !important;
+  border: 1px solid #f4a4b8 !important;
+  border-left: 6px solid #f4a4b8 !important;
+  color: #f4a4b8 !important;
+  padding: 1.25rem;
+  border-radius: 4px;
+  margin: 1.5rem 0;
+}
+
+.bond-comms-banner span {
+  color: #f4a4b8 !important;
+  font-weight: bold;
+}
+
+.bond-comms-banner p {
+  margin: 0.4rem 0 0 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+  color: #e2ded0 !important;
+}
+
+/* Top Agency Tabs & Sub-Tabs Matrix (Styled with Anya's emerald eye color) */
+.comms-sub-tabs {
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #2a3447;
+  padding-bottom: 1rem;
+}
+
+.agency-tab-btn,
+.comms-sub-tabs .project-btn {
+  background-color: #181f2c !important;
+  color: #b5ac9b !important;
+  border: 1px solid #3b4559 !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  font-weight: bold;
+}
+
+.agency-tab-btn:hover,
+.comms-sub-tabs .project-btn:hover {
+  background-color: #112d2b !important;
+  color: #1abc9c !important; /* Anya's eye color on hover */
+  border-color: #1abc9c !important;
+}
+
+.agency-tab-btn.active,
+.comms-sub-tabs .project-btn.active {
+  background-color: #16a085 !important; /* Anya's emerald-green eye color */
+  color: #ffffff !important;
+  border-color: #1abc9c !important;
+  box-shadow: 0 0 10px rgba(22, 160, 133, 0.5) !important;
+}
+
+/* Main View Terminal Container */
+#main-content-container {
+  background-color: #0b0f17 !important;
+  border: 1px solid #2b3548 !important;
+  padding: 2rem;
+  border-radius: 6px;
+  min-height: 450px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+}
