@@ -112,17 +112,35 @@ export function renderPrepareMissionView(container, renderCallback) {
 }
 
 export function renderCalendarGridView(container, monthStart, monthEnd, daysInMonth, startDayOfWeek, isSameDay) {
-  const projects = getProjects();
-  const currentIndex = getCurrentProjectIndex();
-  const activeProject = projects[currentIndex];
+  if (!window.currentCalendarAgency) {
+    window.currentCalendarAgency = 'wise';
+  }
+
+  const isYuri = window.currentCalendarAgency === 'yuri';
+  const projects = isYuri 
+    ? JSON.parse(localStorage.getItem('sss_projects') || '[]') 
+    : getProjects();
+    
+  const activeProject = projects[getCurrentProjectIndex()] || projects[0];
   const missions = activeProject ? activeProject.missions : [];
 
   let html = `
-    <div class="calendar-grid-wrapper" style="font-family: 'Special Elite', monospace;">
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-family: 'Anton', sans-serif; margin-bottom: 0.5rem; background: #d6c098; padding: 0.4rem; border: 1px solid #8c7a5b;">
-        <div style="color: #8b1e1e;">Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Dynamic Agency Calendar Switcher -->
+      <div class="calendar-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
+        <button type="button" id="cal-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          📁 Agent Twilight (WISE HQ)
+        </button>
+        <button type="button" id="cal-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          🕵️ Agent Yuri (SSS Bureau)
+        </button>
       </div>
-      <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
+
+      <div class="calendar-grid-wrapper">
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-family: 'Anton', sans-serif; margin-bottom: 0.5rem; background: #d6c098; padding: 0.4rem; border: 1px solid #8c7a5b;">
+          <div style="color: #8b1e1e;">Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;">
   `;
 
   for (let i = 0; i < startDayOfWeek; i++) {
@@ -146,8 +164,26 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
     `;
   });
 
-  html += `</div></div>`;
+  html += `</div></div></div>`;
   container.innerHTML = html;
+
+  // Attach event listeners for switching between Twilight and Yuri's calendar
+  const wiseBtn = container.querySelector('#cal-wise-btn');
+  const yuriBtn = container.querySelector('#cal-yuri-btn');
+
+  if (wiseBtn) {
+    wiseBtn.addEventListener('click', () => {
+      window.currentCalendarAgency = 'wise';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
+
+  if (yuriBtn) {
+    yuriBtn.addEventListener('click', () => {
+      window.currentCalendarAgency = 'yuri';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
 }
 
 export function renderTableView(container) {
