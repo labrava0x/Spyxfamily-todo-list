@@ -1,5 +1,5 @@
 import { format, parseISO, isPast } from 'date-fns';
-import { getProjects, getCurrentProjectIndex, getCommsConfig, saveCommsConfig } from '../storage.js';
+import { getProjects, getCurrentProjectIndex, getCommsConfig, saveCommsConfig, saveStorage } from '../storage.js';
 
 export function renderInsightsView(container) {
   const projects = getProjects();
@@ -52,59 +52,151 @@ export function renderInsightsView(container) {
 }
 
 export function renderPrepareMissionView(container, renderCallback) {
-  const projects = getProjects();
-  const currentIndex = getCurrentProjectIndex();
-  const activeProject = projects[currentIndex];
-
-  if (!activeProject || activeProject.missions.length === 0) {
-    container.innerHTML = '<p class="no-missions">No missions available to prepare.</p>';
-    return;
+  if (!window.currentPrepAgency) {
+    window.currentPrepAgency = 'wise';
   }
+
+  const isYuri = window.currentPrepAgency === 'yuri';
+  
+  // Directly fetch projects from the respective page storage source
+  let projects = isYuri 
+    ? JSON.parse(localStorage.getItem('sss_projects') || '[]') 
+    : getProjects();
+
+  const currentIndex = getCurrentProjectIndex() || 0;
+  
+  if (!projects[currentIndex]) {
+    projects[currentIndex] = {
+      name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
+      missions: [],
+      generalPreparation: { keyTakeaways: '', briefingScript: '' }
+    };
+  }
+
+  const activeProject = projects[currentIndex];
+  const hasMissions = activeProject.missions && activeProject.missions.length > 0;
 
   let html = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Dynamic Agency Preparation Switcher -->
+      <div class="prep-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
+        <button type="button" id="prep-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          📁 WISE HQ
+        </button>
+        <button type="button" id="prep-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          🕵️ SSS Bureau
+        </button>
+      </div>
+
       <p style="background: #f7f1e1; padding: 0.8rem; border: 1px solid #9c8a6b; border-left: 4px solid #8b1e1e; margin: 0;">
-        🎯 <strong>Mission Preparation Hub:</strong> Keep the objective simple. What are the three things about this mission that everyone should remember? Write the script first.
+        🎯 <strong>Mission Preparation Hub (${isYuri ? 'SSS Bureau' : 'WISE HQ'}):</strong> Keep the objective simple. What are the three things about this mission that everyone should remember? Write the script first.
       </p>
   `;
 
-  activeProject.missions.forEach((m, index) => {
-    const prep = m.preparation || { keyTakeaways: '', briefingScript: '' };
-    html += `
-      <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e; border-bottom: 2px solid #d6c098; padding-bottom: 0.3rem;">
-          ${m.title}
-        </h3>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
-          <div>
-            <label style="font-size: 0.85rem; font-weight: bold;">3 Core Takeaways:</label>
-            <input type="text" id="tab-prep-takeaways-${index}" value="${prep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;" />
-          </div>
-          <div>
-            <label style="font-size: 0.85rem; font-weight: bold;">Briefing Script / Strategy:</label>
-            <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;">${prep.briefingScript || ''}</textarea>
-          </div>
-          <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem;">Save Mission Briefing</button>
+  // General Pre-Mission Briefing & Strategy (Synchronized with respective page state)
+  const generalPrep = activeProject.generalPreparation || { keyTakeaways: '', briefingScript: '' };
+  html += `
+    <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+      <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e; border-bottom: 2px solid #d6c098; padding-bottom: 0.3rem;">
+        🌐 General Operation Briefing & Strategy (${isYuri ? 'SSS Bureau' : 'WISE HQ'})
+      </h3>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
+        <div>
+          <label style="font-size: 0.85rem; font-weight: bold;">3 Core Takeaways:</label>
+          <input type="text" id="general-prep-takeaways" value="${generalPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;" />
         </div>
+        <div>
+          <label style="font-size: 0.85rem; font-weight: bold;">Briefing Script / Strategy:</label>
+          <textarea id="general-prep-script" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;">${generalPrep.briefingScript || ''}</textarea>
+        </div>
+        <button type="button" id="save-general-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem;">Save General Briefing</button>
       </div>
-    `;
-  });
+    </div>
+  `;
+
+  // Specific Mission Preparation Cards (Directly matching missions from the respective agency page)
+  if (hasMissions) {
+    activeProject.missions.forEach((m, index) => {
+      const prep = m.preparation || { keyTakeaways: '', briefingScript: '' };
+      html += `
+        <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+          <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e; border-bottom: 2px solid #d6c098; padding-bottom: 0.3rem;">
+            🎯 Mission: ${m.title}
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
+            <div>
+              <label style="font-size: 0.85rem; font-weight: bold;">3 Core Takeaways:</label>
+              <input type="text" id="tab-prep-takeaways-${index}" value="${prep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;" />
+            </div>
+            <div>
+              <label style="font-size: 0.85rem; font-weight: bold;">Briefing Script / Strategy:</label>
+              <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem;">${prep.briefingScript || ''}</textarea>
+            </div>
+            <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem;">Save Mission Briefing</button>
+          </div>
+        </div>
+      `;
+    });
+  }
 
   html += `</div>`;
   container.innerHTML = html;
 
+  // Agency Switcher Event Handlers
+  const wiseBtn = container.querySelector('#prep-wise-btn');
+  const yuriBtn = container.querySelector('#prep-yuri-btn');
+
+  if (wiseBtn) {
+    wiseBtn.addEventListener('click', () => {
+      window.currentPrepAgency = 'wise';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
+
+  if (yuriBtn) {
+    yuriBtn.addEventListener('click', () => {
+      window.currentPrepAgency = 'yuri';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
+
+  // General Briefing Save Handler (Writes directly to respective page storage)
+  const saveGeneralBtn = container.querySelector('#save-general-prep-btn');
+  if (saveGeneralBtn) {
+    saveGeneralBtn.addEventListener('click', () => {
+      const keyTakeaways = document.getElementById('general-prep-takeaways').value.trim();
+      const briefingScript = document.getElementById('general-prep-script').value.trim();
+
+      projects[currentIndex].generalPreparation = { keyTakeaways, briefingScript };
+
+      if (isYuri) {
+        localStorage.setItem('sss_projects', JSON.stringify(projects));
+      } else {
+        saveStorage(projects);
+      }
+
+      alert("🎯 General operational briefing successfully saved!");
+      if (typeof renderCallback === 'function') renderCallback();
+    });
+  }
+
+  // Individual Mission Briefing Save Handlers (Writes directly to respective page storage)
   container.querySelectorAll('.save-tab-prep-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mIdx = e.target.getAttribute('data-index');
       const keyTakeaways = document.getElementById(`tab-prep-takeaways-${mIdx}`).value.trim();
       const briefingScript = document.getElementById(`tab-prep-script-${mIdx}`).value.trim();
 
-      const projectIndex = getCurrentProjectIndex();
-      const allProjects = getProjects();
-      const mission = allProjects[projectIndex].missions[mIdx];
+      if (projects[currentIndex] && projects[currentIndex].missions[mIdx]) {
+        projects[currentIndex].missions[mIdx].preparation = { keyTakeaways, briefingScript };
 
-      mission.preparation = { keyTakeaways, briefingScript };
-      localStorage.setItem('wise_projects', JSON.stringify(allProjects));
+        if (isYuri) {
+          localStorage.setItem('sss_projects', JSON.stringify(projects));
+        } else {
+          saveStorage(projects);
+        }
+      }
+
       alert("🎯 Mission preparation briefing successfully saved!");
       if (typeof renderCallback === 'function') renderCallback();
     });
@@ -129,10 +221,10 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
       <!-- Dynamic Agency Calendar Switcher -->
       <div class="calendar-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
         <button type="button" id="cal-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          📁 Agent Twilight (WISE HQ)
+          📁 WISE HQ
         </button>
         <button type="button" id="cal-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          🕵️ Agent Yuri (SSS Bureau)
+          🕵️ SSS Bureau
         </button>
       </div>
 
@@ -167,7 +259,6 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
   html += `</div></div></div>`;
   container.innerHTML = html;
 
-  // Attach event listeners for switching between Twilight and Yuri's calendar
   const wiseBtn = container.querySelector('#cal-wise-btn');
   const yuriBtn = container.querySelector('#cal-yuri-btn');
 
