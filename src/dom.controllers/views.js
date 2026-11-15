@@ -371,12 +371,17 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
   }
 
   const isYuri = window.currentCalendarAgency === 'yuri';
-  const projects = isYuri 
-    ? JSON.parse(localStorage.getItem('sss_projects') || '[]') 
-    : getProjects();
+  
+  // Strictly isolate data sources: WISE HQ uses getProjects(), SSS Bureau uses sss_projects
+  let projects = [];
+  if (isYuri) {
+    projects = JSON.parse(localStorage.getItem('sss_projects') || '[]');
+  } else {
+    projects = getProjects();
+  }
     
   const activeProject = projects[getCurrentProjectIndex()] || projects[0];
-  const missions = activeProject ? activeProject.missions : [];
+  const missions = activeProject && Array.isArray(activeProject.missions) ? activeProject.missions : [];
 
   let html = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
@@ -440,45 +445,88 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
 }
 
 export function renderTableView(container) {
-  const projects = getProjects();
-  const currentIndex = getCurrentProjectIndex();
-  const activeProject = projects[currentIndex];
-  const missions = activeProject ? activeProject.missions : [];
-
-  if (missions.length === 0) {
-    container.innerHTML = '<p class="no-missions">No missions recorded for table view.</p>';
-    return;
+  if (!window.currentTableAgency) {
+    window.currentTableAgency = 'wise';
   }
 
+  const isYuri = window.currentTableAgency === 'yuri';
+  
+  // Strictly isolate data sources: WISE HQ uses getProjects(), SSS Bureau uses sss_projects
+  let projects = [];
+  if (isYuri) {
+    projects = JSON.parse(localStorage.getItem('sss_projects') || '[]');
+  } else {
+    projects = getProjects();
+  }
+
+  const currentIndex = getCurrentProjectIndex() || 0;
+  const activeProject = projects[currentIndex] || projects[0];
+  const missions = activeProject && Array.isArray(activeProject.missions) ? activeProject.missions : [];
+
   let html = `
-    <div style="overflow-x: auto; font-family: 'Special Elite', monospace;">
-      <table style="width: 100%; border-collapse: collapse; background: #f7f1e1; border: 1px solid #8c7a5b;">
-        <thead>
-          <tr style="background: #d6c098; border-bottom: 2px solid #8c7a5b; text-align: left; font-family: 'Anton', sans-serif;">
-            <th style="padding: 8px;">Status</th>
-            <th style="padding: 8px;">Title</th>
-            <th style="padding: 8px;">Category</th>
-            <th style="padding: 8px;">Threat</th>
-            <th style="padding: 8px;">Deadline</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      <!-- Dynamic Agency Table Switcher -->
+      <div class="table-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
+        <button type="button" id="table-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          📁 WISE HQ
+        </button>
+        <button type="button" id="table-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+          🕵️ SSS Bureau
+        </button>
+      </div>
   `;
 
-  missions.forEach((m, idx) => {
+  if (missions.length === 0) {
+    html += `<p class="no-missions" style="text-align: center; color: #7c6d57; font-style: italic;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'} table view.</p></div>`;
+    container.innerHTML = html;
+  } else {
     html += `
-      <tr style="border-bottom: 1px solid #d6c098;">
-        <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} /></td>
-        <td style="padding: 8px; font-weight: bold;">${m.title}</td>
-        <td style="padding: 8px;">${m.category || 'Mission'}</td>
-        <td style="padding: 8px;">${m.threatLevel}</td>
-        <td style="padding: 8px;">${m.dueDate || 'None'}</td>
-      </tr>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; background: #f7f1e1; border: 1px solid #8c7a5b;">
+          <thead>
+            <tr style="background: #d6c098; border-bottom: 2px solid #8c7a5b; text-align: left; font-family: 'Anton', sans-serif;">
+              <th style="padding: 8px;">Status</th>
+              <th style="padding: 8px;">Title</th>
+              <th style="padding: 8px;">Category</th>
+              <th style="padding: 8px;">Threat</th>
+              <th style="padding: 8px;">Deadline</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
-  });
 
-  html += `</tbody></table></div>`;
-  container.innerHTML = html;
+    missions.forEach((m, idx) => {
+      html += `
+        <tr style="border-bottom: 1px solid #d6c098;">
+          <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} /></td>
+          <td style="padding: 8px; font-weight: bold;">${m.title}</td>
+          <td style="padding: 8px;">${m.category || 'Mission'}</td>
+          <td style="padding: 8px;">${m.threatLevel}</td>
+          <td style="padding: 8px;">${m.dueDate || 'None'}</td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table></div></div>`;
+    container.innerHTML = html;
+  }
+
+  const wiseBtn = container.querySelector('#table-wise-btn');
+  const yuriBtn = container.querySelector('#table-yuri-btn');
+
+  if (wiseBtn) {
+    wiseBtn.addEventListener('click', () => {
+      window.currentTableAgency = 'wise';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
+
+  if (yuriBtn) {
+    yuriBtn.addEventListener('click', () => {
+      window.currentTableAgency = 'yuri';
+      if (typeof window.renderApp === 'function') window.renderApp();
+    });
+  }
 }
 
 export function renderDeveloperView(container) {
