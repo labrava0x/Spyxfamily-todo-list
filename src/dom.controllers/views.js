@@ -1,20 +1,114 @@
 import { format, parseISO, isPast } from 'date-fns';
 import { getProjects, getCurrentProjectIndex, getCommsConfig, saveCommsConfig, saveStorage } from '../storage.js';
+import { renderApp } from './dom.controller.js';
 
-export function renderInsightsView(container) {
-  const projects = getProjects();
-  const currentIndex = getCurrentProjectIndex();
-  const activeProject = projects[currentIndex];
+/* ================================================================= *
+ * SHARED AGENCY HELPER                                              *
+ * ================================================================= */
+
+function getActiveAgency() {
+  return window.currentCommsAgency || 'wise';
+}
+
+function setActiveAgency(agency) {
+  window.currentCommsAgency = agency;
+}
+
+function getAgencyProjects(agency) {
+  return agency === 'yuri'
+    ? JSON.parse(localStorage.getItem('sss_projects') || '[]')
+    : getProjects();
+}
+
+function saveAgencyProjects(agency, projects) {
+  if (agency === 'yuri') {
+    localStorage.setItem('sss_projects', JSON.stringify(projects));
+  } else {
+    saveStorage(projects);
+  }
+}
+
+function resolveTargetContainer(container) {
+  if (!container) return document.getElementById('mission-container');
+  // Guard against accidentally passing #app or .comms-hub-folder
+  if (container.id === 'app' || container.classList.contains('comms-hub-folder')) {
+    return container.querySelector('#mission-container') || container;
+  }
+  return container;
+}
+
+function renderAgencySwitcher(prefix, isYuri) {
+  return `
+    <div class="${prefix}-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
+      <button type="button" id="${prefix}-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+        📁 WISE HQ
+      </button>
+      <button type="button" id="${prefix}-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
+        🕵️ SSS Bureau
+      </button>
+    </div>
+  `;
+}
+
+function attachAgencySwitcherListeners(target, prefix, renderCallback) {
+  const wiseBtn = target.querySelector(`#${prefix}-wise-btn`);
+  const yuriBtn = target.querySelector(`#${prefix}-yuri-btn`);
+
+  const triggerRefresh = () => {
+    if (typeof renderCallback === 'function') {
+      renderCallback();
+    } else if (typeof renderApp === 'function') {
+      renderApp();
+    }
+  };
+
+  if (wiseBtn) {
+    wiseBtn.addEventListener('click', () => {
+      setActiveAgency('wise');
+      triggerRefresh();
+    });
+  }
+
+  if (yuriBtn) {
+    yuriBtn.addEventListener('click', () => {
+      setActiveAgency('yuri');
+      triggerRefresh();
+    });
+  }
+}
+
+
+/* ================================================================= *
+ * 1. INSIGHTS VIEW MODULE                                           *
+ * ================================================================= */
+
+export function renderInsightsView(container, renderCallback) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
+  const agency = getActiveAgency();
+  const isYuri = agency === 'yuri';
+  const projects = getAgencyProjects(agency);
+  const currentIndex = getCurrentProjectIndex() || 0;
+  const activeProject = projects[currentIndex] || projects[0];
+
+  let html = `
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+      ${renderAgencySwitcher('insights', isYuri)}
+  `;
 
   if (!activeProject) {
-    container.innerHTML = '<p class="no-missions">No active operation selected.</p>';
+    html += `<p class="no-missions" style="text-align: center; color: #7c6d57; font-style: italic;">No active operation selected for ${isYuri ? 'SSS Bureau' : 'WISE HQ'}.</p></div>`;
+    target.innerHTML = html;
+    attachAgencySwitcherListeners(target, 'insights', renderCallback);
     return;
   }
 
-  const totalMissions = activeProject.missions.length;
-  const completedMissions = activeProject.missions.filter(m => m.accomplished).length;
-  const overdueMissions = activeProject.missions.filter(m => !m.accomplished && m.dueDate && isPast(parseISO(m.dueDate))).length;
-  
+  const missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
+  const totalMissions = missions.length;
+  const completedMissions = missions.filter(m => m.accomplished).length;
+  const overdueMissions = missions.filter(m => !m.accomplished && m.dueDate && isPast(parseISO(m.dueDate))).length;
+
   let healthStatus = 'Excellent 🟢';
   let healthDesc = 'This operation is in excellent health, with final cut moving steadily and tasks on track. No tasks are overdue!';
 
@@ -26,10 +120,9 @@ export function renderInsightsView(container) {
     healthDesc = 'Operation is progressing steadily, but several intelligence milestones remain pending.';
   }
 
-  container.innerHTML = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+  html += `
       <div style="background: #f7f1e1; padding: 1.5rem; border: 1px solid #9c8a6b; border-top: 4px solid #8b1e1e; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.3rem; color: #8b1e1e;">📊 Operation Health: ${healthStatus}</h3>
+        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.3rem; color: #8b1e1e;">📊 Operation Health (${isYuri ? 'SSS Bureau' : 'WISE HQ'}): ${healthStatus}</h3>
         <p style="font-size: 0.95rem; line-height: 1.5; color: #2b1e10; margin-top: 0.5rem;">${healthDesc}</p>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1.2rem;">
@@ -49,7 +142,15 @@ export function renderInsightsView(container) {
       </div>
     </div>
   `;
+
+  target.innerHTML = html;
+  attachAgencySwitcherListeners(target, 'insights', renderCallback);
 }
+
+
+/* ================================================================= *
+ * 2. CIPHER & DOODLE CANVAS HELPERS                                 *
+ * ================================================================= */
 
 function drawDancingMenTemplate(ctx) {
   ctx.strokeStyle = '#8b1e1e';
@@ -58,22 +159,18 @@ function drawDancingMenTemplate(ctx) {
   ctx.lineJoin = 'round';
 
   const drawDancingMan = (startX) => {
-    // Head
     ctx.beginPath();
     ctx.arc(startX, 45, 10, 0, Math.PI * 2);
     ctx.stroke();
-    // Body
     ctx.beginPath();
     ctx.moveTo(startX, 55);
     ctx.lineTo(startX, 110);
     ctx.stroke();
-    // Arms (dancing pose)
     ctx.beginPath();
     ctx.moveTo(startX - 20, 75);
     ctx.lineTo(startX, 70);
     ctx.lineTo(startX + 25, 60);
     ctx.stroke();
-    // Legs (dancing pose)
     ctx.beginPath();
     ctx.moveTo(startX - 15, 140);
     ctx.lineTo(startX, 110);
@@ -104,8 +201,8 @@ function renderDancingMenDoodleSection(agencyPrefix) {
   `;
 }
 
-function attachDoodleCanvasListeners(container) {
-  container.querySelectorAll('canvas[id^="doodle-canvas-"]').forEach(canvas => {
+function attachDoodleCanvasListeners(target) {
+  target.querySelectorAll('canvas[id^="doodle-canvas-"]').forEach(canvas => {
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
     let lastX = 0;
@@ -173,7 +270,7 @@ function attachDoodleCanvasListeners(container) {
     canvas.addEventListener('touchend', stopDraw);
   });
 
-  container.querySelectorAll('.clear-doodle-btn').forEach(btn => {
+  target.querySelectorAll('.clear-doodle-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const canvasId = e.target.getAttribute('data-canvas-id');
       const canvas = document.getElementById(canvasId);
@@ -187,19 +284,20 @@ function attachDoodleCanvasListeners(container) {
   });
 }
 
-export function renderPrepareMissionView(container, renderCallback) {
-  if (!window.currentPrepAgency) {
-    window.currentPrepAgency = 'wise';
-  }
 
-  const isYuri = window.currentPrepAgency === 'yuri';
+/* ================================================================= *
+ * 3. MISSION PREPARATION VIEW MODULE                                *
+ * ================================================================= */
+
+export function renderPrepareMissionView(container, renderCallback) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
+  const agency = getActiveAgency();
+  const isYuri = agency === 'yuri';
   const agencyPrefix = isYuri ? 'yuri' : 'wise';
 
-  // Fetch projects safely for WISE HQ vs SSS Bureau with uniform fallback structure
-  let projects = isYuri
-    ? JSON.parse(localStorage.getItem('sss_projects') || '[]')
-    : getProjects();
-
+  let projects = getAgencyProjects(agency);
   const rawIndex = getCurrentProjectIndex() || 0;
   const activeIndex = projects[rawIndex] ? rawIndex : 0;
 
@@ -217,21 +315,12 @@ export function renderPrepareMissionView(container, renderCallback) {
 
   let html = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Dynamic Agency Preparation Switcher (Identical for both) -->
-      <div class="prep-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
-        <button type="button" id="prep-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          📁 WISE HQ
-        </button>
-        <button type="button" id="prep-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          🕵️ SSS Bureau
-        </button>
-      </div>
+      ${renderAgencySwitcher('prep', isYuri)}
 
       <p style="background: #f7f1e1; padding: 0.8rem; border: 1px solid #9c8a6b; border-left: 4px solid #8b1e1e; margin: 0;">
         🎯 <strong>Mission Preparation Hub (${isYuri ? 'SSS Bureau' : 'WISE HQ'}):</strong> Keep the objective simple. What are the three things about this mission that everyone should remember? Write the script first.
       </p>
 
-      <!-- General Briefing Card (Identical layout and state binding) -->
       <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #8b1e1e; border-bottom: 2px solid #d6c098; padding-bottom: 0.3rem;">
           🌐 General Operation Briefing & Strategy (${isYuri ? 'SSS Bureau' : 'WISE HQ'})
@@ -250,7 +339,6 @@ export function renderPrepareMissionView(container, renderCallback) {
       </div>
   `;
 
-  // Render individual mission cards uniformly whether missions exist or not
   if (missions.length === 0) {
     html += `
       <div style="background: #f7f1e1; border: 1px solid #9c8a6b; padding: 1.2rem; text-align: center; color: #7c6d57; font-style: italic;">
@@ -281,43 +369,20 @@ export function renderPrepareMissionView(container, renderCallback) {
     });
   }
 
-  // Always render Cipher & Doodle canvas identically at the bottom
   html += renderDancingMenDoodleSection(agencyPrefix);
-
   html += `</div>`;
-  container.innerHTML = html;
+  target.innerHTML = html;
 
-  attachDoodleCanvasListeners(container);
+  attachDoodleCanvasListeners(target);
+  attachAgencySwitcherListeners(target, 'prep', renderCallback);
 
-  // Agency Switcher Event Listeners
-  const wiseBtn = container.querySelector('#prep-wise-btn');
-  const yuriBtn = container.querySelector('#prep-yuri-btn');
-
-  if (wiseBtn) {
-    wiseBtn.addEventListener('click', () => {
-      window.currentPrepAgency = 'wise';
-      if (typeof window.renderApp === 'function') window.renderApp();
-    });
-  }
-
-  if (yuriBtn) {
-    yuriBtn.addEventListener('click', () => {
-      window.currentPrepAgency = 'yuri';
-      if (typeof window.renderApp === 'function') window.renderApp();
-    });
-  }
-
-  // General Briefing Save Handler (Correctly writes to WISE or SSS storage depending on active agency)
-  const saveGeneralBtn = container.querySelector('#save-general-prep-btn');
+  const saveGeneralBtn = target.querySelector('#save-general-prep-btn');
   if (saveGeneralBtn) {
     saveGeneralBtn.addEventListener('click', () => {
       const keyTakeaways = document.getElementById('general-prep-takeaways').value.trim();
       const briefingScript = document.getElementById('general-prep-script').value.trim();
 
-      const freshProjects = isYuri
-        ? JSON.parse(localStorage.getItem('sss_projects') || '[]')
-        : getProjects();
-
+      const freshProjects = getAgencyProjects(agency);
       if (!freshProjects[activeIndex]) {
         freshProjects[activeIndex] = {
           name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
@@ -326,74 +391,52 @@ export function renderPrepareMissionView(container, renderCallback) {
       }
 
       freshProjects[activeIndex].generalPreparation = { keyTakeaways, briefingScript };
+      saveAgencyProjects(agency, freshProjects);
 
-      if (isYuri) {
-        localStorage.setItem('sss_projects', JSON.stringify(freshProjects));
-      } else {
-        saveStorage(freshProjects);
-      }
-
-      alert("🎯 General operational briefing successfully saved!");
+      alert('🎯 General operational briefing successfully saved!');
       if (typeof renderCallback === 'function') renderCallback();
+      else renderApp();
     });
   }
 
-  // Individual Mission Briefing Save Handlers
-  container.querySelectorAll('.save-tab-prep-btn').forEach(btn => {
+  target.querySelectorAll('.save-tab-prep-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const mIdx = Number(e.target.getAttribute('data-index'));
       const keyTakeaways = document.getElementById(`tab-prep-takeaways-${mIdx}`).value.trim();
       const briefingScript = document.getElementById(`tab-prep-script-${mIdx}`).value.trim();
 
-      const freshProjects = isYuri
-        ? JSON.parse(localStorage.getItem('sss_projects') || '[]')
-        : getProjects();
-
+      const freshProjects = getAgencyProjects(agency);
       if (freshProjects[activeIndex] && freshProjects[activeIndex].missions[mIdx]) {
         freshProjects[activeIndex].missions[mIdx].preparation = { keyTakeaways, briefingScript };
-
-        if (isYuri) {
-          localStorage.setItem('sss_projects', JSON.stringify(freshProjects));
-        } else {
-          saveStorage(freshProjects);
-        }
+        saveAgencyProjects(agency, freshProjects);
       }
 
-      alert("🎯 Mission preparation briefing successfully saved!");
+      alert('🎯 Mission preparation briefing successfully saved!');
       if (typeof renderCallback === 'function') renderCallback();
+      else renderApp();
     });
   });
 }
 
-export function renderCalendarGridView(container, monthStart, monthEnd, daysInMonth, startDayOfWeek, isSameDay) {
-  if (!window.currentCalendarAgency) {
-    window.currentCalendarAgency = 'wise';
-  }
 
-  const isYuri = window.currentCalendarAgency === 'yuri';
-  
-  // Strictly isolate data sources: WISE HQ uses getProjects(), SSS Bureau uses sss_projects
-  let projects = [];
-  if (isYuri) {
-    projects = JSON.parse(localStorage.getItem('sss_projects') || '[]');
-  } else {
-    projects = getProjects();
-  }
-    
+/* ================================================================= *
+ * 4. CALENDAR VIEW MODULE                                           *
+ * ================================================================= */
+
+export function renderCalendarGridView(container, monthStart, monthEnd, daysInMonth, startDayOfWeek, isSameDay, renderCallback) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
+  const agency = getActiveAgency();
+  const isYuri = agency === 'yuri';
+  const projects = getAgencyProjects(agency);
+
   const activeProject = projects[getCurrentProjectIndex()] || projects[0];
   const missions = activeProject && Array.isArray(activeProject.missions) ? activeProject.missions : [];
 
   let html = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Dynamic Agency Calendar Switcher -->
-      <div class="calendar-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
-        <button type="button" id="cal-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          📁 WISE HQ
-        </button>
-        <button type="button" id="cal-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          🕵️ SSS Bureau
-        </button>
-      </div>
+      ${renderAgencySwitcher('cal', isYuri)}
 
       <div class="calendar-grid-wrapper">
         <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-family: 'Anton', sans-serif; margin-bottom: 0.5rem; background: #d6c098; padding: 0.4rem; border: 1px solid #8c7a5b;">
@@ -424,61 +467,37 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
   });
 
   html += `</div></div></div>`;
-  container.innerHTML = html;
+  target.innerHTML = html;
 
-  const wiseBtn = container.querySelector('#cal-wise-btn');
-  const yuriBtn = container.querySelector('#cal-yuri-btn');
-
-  if (wiseBtn) {
-    wiseBtn.addEventListener('click', () => {
-      window.currentCalendarAgency = 'wise';
-      if (typeof window.renderApp === 'function') window.renderApp();
-    });
-  }
-
-  if (yuriBtn) {
-    yuriBtn.addEventListener('click', () => {
-      window.currentCalendarAgency = 'yuri';
-      if (typeof window.renderApp === 'function') window.renderApp();
-    });
-  }
+  attachAgencySwitcherListeners(target, 'cal', renderCallback);
 }
 
-export function renderTableView(container) {
-  if (!window.currentTableAgency) {
-    window.currentTableAgency = 'wise';
-  }
 
-  const isYuri = window.currentTableAgency === 'yuri';
-  
-  // Strictly isolate data sources: WISE HQ uses getProjects(), SSS Bureau uses sss_projects
-  let projects = [];
-  if (isYuri) {
-    projects = JSON.parse(localStorage.getItem('sss_projects') || '[]');
-  } else {
-    projects = getProjects();
-  }
+/* ================================================================= *
+ * 5. TABLE VIEW MODULE                                              *
+ * ================================================================= */
 
-  const currentIndex = getCurrentProjectIndex() || 0;
-  const activeProject = projects[currentIndex] || projects[0];
+export function renderTableView(container, renderCallback) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
+  const agency = getActiveAgency();
+  const isYuri = agency === 'yuri';
+  const projects = getAgencyProjects(agency);
+
+  const rawIndex = getCurrentProjectIndex() || 0;
+  const activeIndex = projects[rawIndex] ? rawIndex : 0;
+  const activeProject = projects[activeIndex];
   const missions = activeProject && Array.isArray(activeProject.missions) ? activeProject.missions : [];
 
   let html = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
-      <!-- Dynamic Agency Table Switcher -->
-      <div class="table-agency-switcher" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 0.5rem;">
-        <button type="button" id="table-wise-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${!isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          📁 WISE HQ
-        </button>
-        <button type="button" id="table-yuri-btn" class="secondary-btn" style="flex: 1; max-width: 250px; background-color: ${isYuri ? '#16a085' : '#181f2c'}; color: #fff; border-color: #1abc9c; font-family: 'Anton', sans-serif;">
-          🕵️ SSS Bureau
-        </button>
-      </div>
+      ${renderAgencySwitcher('table', isYuri)}
   `;
 
   if (missions.length === 0) {
     html += `<p class="no-missions" style="text-align: center; color: #7c6d57; font-style: italic;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'} table view.</p></div>`;
-    container.innerHTML = html;
+    target.innerHTML = html;
   } else {
     html += `
       <div style="overflow-x: auto;">
@@ -499,7 +518,7 @@ export function renderTableView(container) {
       html += `
         <tr style="border-bottom: 1px solid #d6c098;">
           <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} /></td>
-          <td style="padding: 8px; font-weight: bold;">${m.title}</td>
+          <td style="padding: 8px; font-weight: bold; ${m.accomplished ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${m.title}</td>
           <td style="padding: 8px;">${m.category || 'Mission'}</td>
           <td style="padding: 8px;">${m.threatLevel}</td>
           <td style="padding: 8px;">${m.dueDate || 'None'}</td>
@@ -508,95 +527,104 @@ export function renderTableView(container) {
     });
 
     html += `</tbody></table></div></div>`;
-    container.innerHTML = html;
-  }
+    target.innerHTML = html;
 
-  const wiseBtn = container.querySelector('#table-wise-btn');
-  const yuriBtn = container.querySelector('#table-yuri-btn');
-
-  if (wiseBtn) {
-    wiseBtn.addEventListener('click', () => {
-      window.currentTableAgency = 'wise';
-      if (typeof window.renderApp === 'function') window.renderApp();
+    target.querySelectorAll('.accomplished-checkbox').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const mIdx = Number(e.target.getAttribute('data-index'));
+        const freshProjects = getAgencyProjects(agency);
+        if (freshProjects[activeIndex] && freshProjects[activeIndex].missions[mIdx]) {
+          freshProjects[activeIndex].missions[mIdx].accomplished = e.target.checked;
+          saveAgencyProjects(agency, freshProjects);
+          if (typeof renderCallback === 'function') renderCallback();
+          else renderApp();
+        }
+      });
     });
   }
 
-  if (yuriBtn) {
-    yuriBtn.addEventListener('click', () => {
-      window.currentTableAgency = 'yuri';
-      if (typeof window.renderApp === 'function') window.renderApp();
-    });
-  }
+  attachAgencySwitcherListeners(target, 'table', renderCallback);
 }
 
+
+/* ================================================================= *
+ * 6. DEVELOPER & AUTOMATIONS VIEW MODULES                           *
+ * ================================================================= */
+
 export function renderDeveloperView(container) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
   const config = getCommsConfig();
-  container.innerHTML = `
+  target.innerHTML = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1rem; background: #f7f1e1; padding: 1.2rem; border: 1px solid #8c7a5b;">
       <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; color: #8b1e1e;">💻 Model Context Protocol (MCP) & API Config</h3>
       <p style="font-size: 0.85rem; color: #5c4d37;">Connect your local AI assistants and MCP servers directly to your classified dossiers.</p>
       
       <div class="form-group">
         <label>MCP Endpoint URL</label>
-        <input type="text" id="dev-mcp-endpoint" value="${config.mcpEndpoint}" style="width: 100%; padding: 0.4rem;" />
+        <input type="text" id="dev-mcp-endpoint" value="${config.mcpEndpoint || ''}" style="width: 100%; padding: 0.4rem;" />
       </div>
       <div class="form-group">
         <label>Secure API Token</label>
-        <input type="text" id="dev-api-token" value="${config.apiKey}" style="width: 100%; padding: 0.4rem;" />
+        <input type="text" id="dev-api-token" value="${config.apiKey || ''}" style="width: 100%; padding: 0.4rem;" />
       </div>
       <button type="button" id="save-dev-config-btn" class="primary-btn dossier-btn" style="align-self: flex-start; padding: 0.4rem 1rem;">Save Developer Config</button>
     </div>
   `;
 
-  const saveBtn = container.querySelector('#save-dev-config-btn');
+  const saveBtn = target.querySelector('#save-dev-config-btn');
   if (saveBtn) {
     saveBtn.addEventListener('click', () => {
-      const mcpEndpoint = container.querySelector('#dev-mcp-endpoint').value;
-      const apiKey = container.querySelector('#dev-api-token').value;
+      const mcpEndpoint = target.querySelector('#dev-mcp-endpoint').value;
+      const apiKey = target.querySelector('#dev-api-token').value;
       const current = getCommsConfig();
       current.mcpEndpoint = mcpEndpoint;
       current.apiKey = apiKey;
       saveCommsConfig(current);
-      alert("💻 Developer configuration successfully saved!");
+      alert('💻 Developer configuration successfully saved!');
     });
   }
 }
 
 export function renderAutomationsView(container) {
+  const target = resolveTargetContainer(container);
+  if (!target) return;
+
   const config = getCommsConfig();
-  container.innerHTML = `
+  target.innerHTML = `
     <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1rem; background: #f7f1e1; padding: 1.2rem; border: 1px solid #8c7a5b;">
       <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; color: #8b1e1e;">⚡ Messaging Relays (Telegram & Discord)</h3>
       <p style="font-size: 0.85rem; color: #5c4d37;">Configure your external handler notifications and webhook bots.</p>
 
       <div class="form-group">
         <label>Telegram Bot Token</label>
-        <input type="text" id="comms-tg-token" value="${config.telegramToken}" placeholder="123456:ABC-DEF..." style="width: 100%; padding: 0.4rem;" />
+        <input type="text" id="comms-tg-token" value="${config.telegramToken || ''}" placeholder="123456:ABC-DEF..." style="width: 100%; padding: 0.4rem;" />
       </div>
       <div class="form-group">
         <label>Telegram Chat ID</label>
-        <input type="text" id="comms-tg-chat" value="${config.telegramChatId}" placeholder="-100..." style="width: 100%; padding: 0.4rem;" />
+        <input type="text" id="comms-tg-chat" value="${config.telegramChatId || ''}" placeholder="-100..." style="width: 100%; padding: 0.4rem;" />
       </div>
       <div class="form-group">
         <label>Discord Webhook URL</label>
-        <input type="text" id="comms-discord" value="${config.discordWebhook}" placeholder="https://discord.com/api/webhooks/..." style="width: 100%; padding: 0.4rem;" />
+        <input type="text" id="comms-discord" value="${config.discordWebhook || ''}" placeholder="https://discord.com/api/webhooks/..." style="width: 100%; padding: 0.4rem;" />
       </div>
       <button type="button" id="save-comms-config-btn" class="primary-btn dossier-btn" style="align-self: flex-start; padding: 0.4rem 1rem;">Save Relays</button>
     </div>
   `;
 
-  const saveBtn = container.querySelector('#save-comms-config-btn');
+  const saveBtn = target.querySelector('#save-comms-config-btn');
   if (saveBtn) {
     saveBtn.addEventListener('click', () => {
-      const telegramToken = container.querySelector('#comms-tg-token').value;
-      const telegramChatId = container.querySelector('#comms-tg-chat').value;
-      const discordWebhook = container.querySelector('#comms-discord').value;
+      const telegramToken = target.querySelector('#comms-tg-token').value;
+      const telegramChatId = target.querySelector('#comms-tg-chat').value;
+      const discordWebhook = target.querySelector('#comms-discord').value;
       const current = getCommsConfig();
       current.telegramToken = telegramToken;
       current.telegramChatId = telegramChatId;
       current.discordWebhook = discordWebhook;
       saveCommsConfig(current);
-      alert("⚡ Comms relay configuration successfully saved!");
+      alert('⚡ Comms relay configuration successfully saved!');
     });
   }
 }

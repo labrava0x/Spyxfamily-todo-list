@@ -84,70 +84,75 @@ export function initLayout() {
     document.body.classList.remove('sss-agency-theme');
   }
 
-  // IF WE ARE ON THE OPERATIONS PAGE, RENDER THE COMMS HUB WITH THE PROPER SUBTITLE & BOND STYLING
+  // OPTION A: RENDER COMPLETE COMMS HUB SHELL (TOP HEADER + BOW TIE + ANYA HEADER + SUB-TABS)
   if (isOperationsPage) {
-    app.innerHTML = `
-      <header class="title-card-header" style="margin-bottom: 2rem;">
-        <div class="header-top-bar">
-          <div class="header-actions">
-            <button type="button" id="theme-toggle-btn" class="secondary-btn">🌓 Toggle Theme</button>
-            <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
-            <label class="secondary-btn file-input-label">
-              📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
-            </label>
+    if (!document.getElementById('mission-container')) {
+      app.innerHTML = `
+        <header class="title-card-header" style="margin-bottom: 1rem;">
+          <div class="header-top-bar">
+            <div class="header-actions">
+              <button type="button" id="theme-toggle-btn" class="secondary-btn">🌓 Toggle Theme</button>
+              <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
+              <label class="secondary-btn file-input-label">
+                📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
+              </label>
+            </div>
           </div>
-        </div>
-        <div>
-          <h1>CLASSIFIED X DOSSIERS</h1>
-        </div>
-        
-        <div class="agency-selector" style="margin-top: 1.5rem;">
-          <div class="agency-links">
-            <a href="index.html" class="agency-tab-btn">📁 WISE HQ</a>
-            <a href="yuri.html" class="agency-tab-btn">🕵️ SSS Bureau</a>
-            <a href="operations.html" class="agency-tab-btn active">⚡ Comms Hub</a>
+          <div>
+            <h1>CLASSIFIED X DOSSIERS</h1>
           </div>
+          
+          <div class="agency-selector" style="margin-top: 1.5rem;">
+            <div class="agency-links">
+              <a href="index.html" class="agency-tab-btn">📁 WISE HQ</a>
+              <a href="yuri.html" class="agency-tab-btn">🕵️ SSS Bureau</a>
+              <a href="operations.html" class="agency-tab-btn active">⚡ Comms Hub</a>
+            </div>
+          </div>
+        </header>
+
+        <!-- SVG Bow Tie -->
+        <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 15px 0; position: relative; z-index: 10; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));">
+          <svg width="140" height="70" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 5,10 Q 30,25 5,40 Q 35,45 48,25 Q 35,5 5,10 Z" fill="#111111" />
+            <path d="M 95,10 Q 70,25 95,40 Q 65,45 52,25 Q 65,5 95,10 Z" fill="#111111" />
+            <rect x="42" y="15" width="16" height="20" rx="3" fill="#000000" />
+          </svg>
         </div>
-      </header>
 
-      <!-- Standalone Comms Hub Terminal Container -->
-      <div class="comms-hub-folder" style="max-width: 1400px; margin: 0 auto;">
-        <div class="archive-subtitle">
-          COMMS MATRIX // SECURE TRANSMISSION FEED
+        <!-- Central Operations Terminal Container -->
+        <div class="dossier-folder comms-hub-folder" style="max-width: 1400px; margin: 0 auto;">
+          <h2>CENTRAL OPERATIONS: ANYA KNOWS WHAT YOU ARE THINKING!</h2>
+
+          <div class="bond-comms-banner">
+            <span style="font-family: 'Anton', sans-serif; font-size: 1.1rem; color: #1f2421; letter-spacing: 1px;">🐕‍🦺 UPLINK STATUS: SECURE (BOND ON GUARD)</span>
+            <p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; opacity: 0.85;">
+              "Bork!" — *Bond is monitoring future data packets for incoming threats and snack deliveries.*
+            </p>
+          </div>
+
+          <nav class="project-tab-wrapper comms-sub-tabs" style="margin-bottom: 2rem; display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="view-board-btn" class="project-btn active view-tab-btn" data-target="board">Board</button>
+            <button type="button" id="view-calendar-btn" class="project-btn view-tab-btn" data-target="calendar">📅 Calendar</button>
+            <button type="button" id="view-prepare-btn" class="project-btn view-tab-btn" data-target="prepare">🎯 Prepare</button>
+            <button type="button" id="view-insights-btn" class="project-btn view-tab-btn" data-target="insights">📊 Insights</button>
+            <button type="button" id="view-table-btn" class="project-btn view-tab-btn" data-target="table">Table Log</button>
+            <button type="button" id="view-developer-btn" class="project-btn view-tab-btn" data-target="developer">💻 Dev</button>
+            <button type="button" id="view-automations-btn" class="project-btn view-tab-btn" data-target="automations">⚡ Comms Relays</button>
+          </nav>
+
+          <main id="main-content-container">
+            <div id="mission-container"></div>
+          </main>
         </div>
-        <h2>CENTRAL OPERATIONS & COMMUNICATIONS MATRIX</h2>
+      `;
 
-        <!-- Bond's Future-Vision Status Banner -->
-        <div class="bond-comms-banner">
-          <span style="font-family: 'Anton', sans-serif; font-size: 1.1rem; color: #1f2421; letter-spacing: 1px;">🐕‍🦺 UPLINK STATUS: SECURE (BOND ON GUARD)</span>
-          <p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; opacity: 0.85;">
-            "Bork!" — *Bond is monitoring future data packets for incoming threats and snack deliveries.*
-          </p>
-        </div>
-
-        <!-- Comms Hub Internal Operations Sub-Tabs Matrix -->
-        <nav class="project-tab-wrapper comms-sub-tabs" style="margin-bottom: 2rem; display: flex; gap: 8px; flex-wrap: wrap;">
-          <button type="button" id="view-board-btn" class="project-btn active view-tab-btn">Board</button>
-          <button type="button" id="view-calendar-btn" class="project-btn view-tab-btn">📅 Calendar</button>
-          <button type="button" id="view-prepare-btn" class="project-btn view-tab-btn">🎯 Prepare</button>
-          <button type="button" id="view-insights-btn" class="project-btn view-tab-btn">📊 Insights</button>
-          <button type="button" id="view-table-btn" class="project-btn view-tab-btn">Table Log</button>
-          <button type="button" id="view-developer-btn" class="project-btn view-tab-btn">💻 Dev</button>
-          <button type="button" id="view-automations-btn" class="project-btn view-tab-btn">⚡ Comms Relays</button>
-        </nav>
-
-        <!-- Main Container where active sub-views render dynamically -->
-        <main id="main-content-container">
-          <div id="mission-container"></div>
-        </main>
-      </div>
-    `;
-
-    setupThemeToggle();
-    return; // Stop here so it doesn't run the standard layout!
+      setupThemeToggle();
+    }
+    return;
   }
 
-  // OTHERWISE, RENDER STANDARD WISE HQ / SSS BUREAU LAYOUT (WITHOUT REDUNDANT VIEW SWITCHERS)
+  // OTHERWISE, RENDER STANDARD WISE HQ / SSS BUREAU LAYOUT
   const archiveSubtitle = isYuriPage ? 'SSS ARCHIVES // TOP SECRET' : 'WISE ARCHIVES // TOP SECRET';
   const operationLabel = isYuriPage ? 'State Security Operation' : 'Target Operation';
   const establishOpHeading = isYuriPage ? 'Establish Surveillance' : 'Establish Operation';
