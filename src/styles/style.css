@@ -24,6 +24,23 @@ body {
   gap: 1.5rem; /* Creates clean breathing room between top buttons and the main title card */
 }
 
+.header-top-bar {
+  width: 100%;
+  max-width: 1400px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 /* Heavy ink title card style */
 h1 {
   font-family: 'Anton', sans-serif;
@@ -343,6 +360,44 @@ body.light-paper-theme .mission-card {
   background-color: #fcf9f2 !important;
   border-color: #c9b793 !important;
 }
+
+/* Inside Agent Codename Container (synced across WISE HQ, SSS Bureau, Comms Hub) */
+.inside-codename-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #f5e6dc;
+  border: 3px solid #8c2a29;
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 0.6rem;
+  margin-top: 0.65rem;
+}
+
+.inside-codename-tab {
+  position: absolute;
+  top: -0.85rem;
+  left: 0.65rem;
+  background: #b8332a;
+  color: #fff8f5;
+  font-family: 'Anton', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid #1c2826;
+}
+
+.inside-codename-bar {
+  background: #232325;
+  color: #f6efe9;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.42rem 1rem;
+  border-left: 4px solid #b8332a;
+}
+
 /* Smooth room light transition */
 html,
 body {

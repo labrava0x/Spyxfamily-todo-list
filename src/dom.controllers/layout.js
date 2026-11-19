@@ -1,7 +1,72 @@
-import { getProjects, getCurrentProjectIndex, setCurrentProjectIndex, addProject } from '../storage.js';
+import { getProjects, getCurrentProjectIndex, setCurrentProjectIndex } from '../storage.js';
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
+const CODENAME_KEY = 'wise_agent_name';
+
 let activeCommsTab = 'board';
+let activeSessionCodename = '';
+
+function normalizeCodename(raw) {
+  if (!raw) return '';
+  if (typeof raw === 'string') return raw.trim();
+  if (typeof raw === 'object') {
+    const val = raw.codename ?? raw.name ?? raw.value ?? '';
+    return String(val).trim();
+  }
+  return String(raw).trim();
+}
+
+export function setActiveCodename(rawCodename) {
+  const cleanName = normalizeCodename(rawCodename);
+  if (cleanName) {
+    activeSessionCodename = cleanName;
+    localStorage.setItem(CODENAME_KEY, cleanName);
+  }
+  renderAgentCodenameBadge(cleanName || activeSessionCodename);
+  return cleanName;
+}
+
+export function getActiveCodename() {
+  if (activeSessionCodename) return activeSessionCodename;
+  const saved = localStorage.getItem(CODENAME_KEY);
+  if (saved && saved.trim()) {
+    activeSessionCodename = saved.trim();
+    return activeSessionCodename;
+  }
+  return '';
+}
+
+export function renderAgentCodenameBadge(rawCodename = '') {
+  const explicit = normalizeCodename(rawCodename);
+  const codename = explicit || getActiveCodename();
+
+  if (explicit) {
+    activeSessionCodename = explicit;
+    localStorage.setItem(CODENAME_KEY, explicit);
+  }
+
+  const badge = document.getElementById('active-agent-badge');
+  if (!badge) return;
+
+  if (codename) {
+    badge.innerHTML = `<span class="inside-codename-tab">TOP SECRET</span><span class="inside-codename-bar">Agent X ${codename} is in</span>`;
+    badge.classList.add('authorized');
+  } else {
+    badge.innerHTML = `<span class="inside-codename-tab">TOP SECRET</span><span class="inside-codename-bar">Agent X is awaiting entry</span>`;
+    badge.classList.remove('authorized');
+  }
+}
+
+if (typeof window !== 'undefined' && !window._wiseAgentNameSyncBound) {
+  window._wiseAgentNameSyncBound = true;
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === CODENAME_KEY) {
+      activeSessionCodename = (e.newValue || '').trim();
+      renderAgentCodenameBadge(activeSessionCodename);
+    }
+  });
+}
 
 function toggleRoomLightState(e) {
   if (e) {
@@ -59,7 +124,7 @@ export function renderCategoryDropdown() {
 
   const categories = getCategories();
   select.innerHTML = '';
-  categories.forEach(cat => {
+  categories.forEach((cat) => {
     const option = document.createElement('option');
     option.value = cat;
     option.textContent = cat;
@@ -138,13 +203,13 @@ export function initLayout() {
     document.body.classList.remove('sss-agency-theme');
   }
 
-  // RENDER COMPLETE COMMS HUB SHELL
   if (isOperationsPage) {
     if (!document.getElementById('comms-hub-shell')) {
       app.innerHTML = `
         <div id="comms-hub-shell">
           <header class="title-card-header" style="margin-bottom: 1rem;">
             <div class="header-top-bar">
+              <div id="active-agent-badge" class="inside-codename-container" aria-live="polite"></div>
               <div class="header-actions">
                 <button type="button" id="theme-toggle-btn" class="secondary-btn">💡 Light: ON</button>
                 <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
@@ -156,7 +221,7 @@ export function initLayout() {
             <div>
               <h1>CLASSIFIED X DOSSIERS</h1>
             </div>
-            
+
             <div class="agency-selector" style="margin-top: 1.5rem;">
               <div class="agency-links">
                 <a href="index.html" class="agency-tab-btn">📁 WISE HQ</a>
@@ -166,7 +231,6 @@ export function initLayout() {
             </div>
           </header>
 
-          <!-- SVG Bow Tie -->
           <div style="display: flex; justify-content: center; align-items: center; width: 100%; margin: 15px 0; position: relative; z-index: 10; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.3));">
             <svg width="140" height="70" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
               <path d="M 5,10 Q 30,25 5,40 Q 35,45 48,25 Q 35,5 5,10 Z" fill="#111111" />
@@ -175,7 +239,6 @@ export function initLayout() {
             </svg>
           </div>
 
-          <!-- Central Operations Terminal Container -->
           <div class="dossier-folder comms-hub-folder" style="max-width: 1400px; margin: 0 auto;">
             <div class="archive-subtitle comms-hub-sticker-tab">COMMS HUB // TOP SECRET</div>
             <h2>CENTRAL OPERATIONS: ANYA KNOWS WHAT YOU ARE THINKING!</h2>
@@ -206,11 +269,11 @@ export function initLayout() {
     }
 
     syncCommsSubTabs(activeCommsTab);
+    renderAgentCodenameBadge();
     setupThemeToggle();
     return;
   }
 
-  // OTHERWISE, RENDER STANDARD WISE HQ / SSS BUREAU LAYOUT
   const archiveSubtitle = isYuriPage ? 'SSS ARCHIVES // TOP SECRET' : 'WISE ARCHIVES // TOP SECRET';
   const operationLabel = isYuriPage ? 'State Security Operation' : 'Target Operation';
   const establishOpHeading = isYuriPage ? 'Establish Surveillance' : 'Establish Operation';
@@ -219,6 +282,7 @@ export function initLayout() {
   app.innerHTML = `
     <header class="title-card-header">
       <div class="header-top-bar">
+        <div id="active-agent-badge" class="inside-codename-container" aria-live="polite"></div>
         <div class="header-actions">
           <button type="button" id="theme-toggle-btn" class="secondary-btn">💡 Light: ON</button>
           <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
@@ -230,7 +294,7 @@ export function initLayout() {
       <div>
         <h1>CLASSIFIED X DOSSIERS</h1>
       </div>
-      
+
       <div class="agency-selector">
         <div class="agency-links">
           <a href="index.html" class="agency-tab-btn ${!isYuriPage && !isOperationsPage ? 'active' : ''}">📁 WISE HQ</a>
@@ -305,7 +369,7 @@ export function initLayout() {
                 <label for="mission-notes">Field Notes / Handler Debrief</label>
                 <textarea id="mission-notes" rows="2" placeholder="Initial handler instructions or @mentions..."></textarea>
               </div>
-              
+
               <div class="form-row-group">
                 <div class="form-group">
                   <label for="mission-spreadsheet">📊 Spreadsheet</label>
@@ -342,6 +406,7 @@ export function initLayout() {
     </div>
   `;
 
+  renderAgentCodenameBadge();
   setupThemeToggle();
 }
 
