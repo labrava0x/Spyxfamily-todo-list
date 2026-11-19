@@ -1,23 +1,20 @@
 import { renderPrepareMissionView, renderInsightsView } from '../views/renderer.js';
 import { renderAutomationsView } from '../views/automations.renderer.js';
 import { renderCalendarGridView } from '../views/calendar.renderer.js';
-import { renderDeveloperView, renderDeveloperOverview } from '../views/dev.renderer.js';
+import { renderDeveloperView } from '../views/dev.renderer.js';
 import { renderTableView } from '../views/table.renderer.js';
 import { renderBoardView } from './board.renderer.js';
 import {
   getProjects,
   getCurrentProjectIndex,
-  saveStorage,
-  getCommsConfig,
-  saveCommsConfig,
-  getAutomations,
-  saveAutomations
+  saveStorage
 } from '../storage.js';
 import {
   renderCategoryDropdown,
   renderProjectDropdown,
   renderProjectsNav,
-  initLayout
+  initLayout,
+  setActiveCommsTab
 } from './layout.js';
 import { eachDayOfInterval, startOfMonth, endOfMonth, getDay, isSameDay } from 'date-fns';
 
@@ -25,6 +22,7 @@ let currentViewMode = 'board';
 
 export function setCurrentViewMode(mode) {
   currentViewMode = mode;
+  setActiveCommsTab(currentViewMode);
 }
 
 export function getCurrentViewMode() {
@@ -32,41 +30,40 @@ export function getCurrentViewMode() {
 }
 
 export function renderApp(filter = 'all') {
-  // 1. Initialize layout, themes, navigation, and dropdowns
   initLayout();
+  setActiveCommsTab(currentViewMode);
   renderProjectsNav();
   renderProjectDropdown();
   renderCategoryDropdown();
 
-  // 2. Locate main display container in DOM
   const container = document.getElementById('main-content-container') || document.getElementById('mission-container');
   if (!container) return;
 
-  // 3. Route rendering based on active view mode to match views.js exports
+  const rerender = () => renderApp(filter);
+
   if (currentViewMode === 'board') {
-    renderBoardView(container, filter, () => renderApp(filter));
+    renderBoardView(container, filter, rerender);
   } else if (currentViewMode === 'table') {
-    renderTableView(container, () => renderApp(filter));
+    renderTableView(container, rerender);
   } else if (currentViewMode === 'prepare') {
-    renderPrepareMissionView(container, () => renderApp(filter));
+    renderPrepareMissionView(container, rerender);
   } else if (currentViewMode === 'insights') {
-    renderInsightsView(container, () => renderApp(filter));
+    renderInsightsView(container, rerender);
   } else if (currentViewMode === 'calendar') {
     const today = new Date();
     const start = startOfMonth(today);
     const end = endOfMonth(today);
     const daysArray = eachDayOfInterval({ start, end });
     const startDayOfWeek = getDay(start);
-    renderCalendarGridView(container, start, daysArray, startDayOfWeek, isSameDay);
+    renderCalendarGridView(container, start, daysArray, startDayOfWeek, isSameDay, rerender);
   } else if (currentViewMode === 'developer' || currentViewMode === 'dev') {
     renderDeveloperView(container);
   } else if (currentViewMode === 'automations' || currentViewMode === 'comms') {
     renderAutomationsView(container);
   } else {
-    renderBoardView(container, filter, () => renderApp(filter));
+    renderBoardView(container, filter, rerender);
   }
 
-  // 4. Attach event listeners for mission completion checkboxes across views
   container.querySelectorAll('.accomplished-checkbox').forEach(chk => {
     chk.addEventListener('change', (e) => {
       const index = parseInt(e.target.getAttribute('data-index'), 10);
@@ -75,7 +72,7 @@ export function renderApp(filter = 'all') {
       if (projects[projIndex] && projects[projIndex].missions[index]) {
         projects[projIndex].missions[index].accomplished = e.target.checked;
         saveStorage(projects);
-        renderApp(filter);
+        rerender();
       }
     });
   });

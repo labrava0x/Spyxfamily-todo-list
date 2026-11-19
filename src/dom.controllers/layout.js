@@ -1,6 +1,25 @@
 import { getProjects, getCurrentProjectIndex, setCurrentProjectIndex, addProject } from '../storage.js';
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
+let activeCommsTab = 'board';
+
+export function setActiveCommsTab(tabName = 'board') {
+  activeCommsTab = String(tabName || 'board').trim().toLowerCase();
+  syncCommsSubTabs();
+}
+
+export function syncCommsSubTabs(tabName = activeCommsTab) {
+  const normalized = String(tabName || 'board').trim().toLowerCase();
+  activeCommsTab = normalized;
+
+  const subTabButtons = document.querySelectorAll('.comms-sub-tabs .view-tab-btn');
+  subTabButtons.forEach((btn) => {
+    const target = (btn.getAttribute('data-target') || '').trim().toLowerCase();
+    const isCurrent = target === normalized;
+    btn.classList.toggle('active', isCurrent);
+    btn.setAttribute('aria-pressed', String(isCurrent));
+  });
+}
 
 export function getCategories() {
   const saved = localStorage.getItem('wise_categories');
@@ -152,6 +171,8 @@ export function initLayout() {
 
       setupThemeToggle();
     }
+
+    syncCommsSubTabs(activeCommsTab);
     return;
   }
 
