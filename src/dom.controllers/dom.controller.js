@@ -55,7 +55,7 @@ export function renderApp(filter = 'all') {
     const end = endOfMonth(today);
     const daysArray = eachDayOfInterval({ start, end });
     const startDayOfWeek = getDay(start);
-    renderCalendarGridView(container, start, daysArray, startDayOfWeek, isSameDay, rerender);
+    renderCalendarGridView(container, start, end, daysArray, startDayOfWeek, isSameDay, rerender);
   } else if (currentViewMode === 'developer' || currentViewMode === 'dev') {
     renderDeveloperView(container);
   } else if (currentViewMode === 'automations' || currentViewMode === 'comms') {
