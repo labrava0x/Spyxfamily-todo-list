@@ -1,13 +1,12 @@
 import { renderApp, setCurrentViewMode } from './dom.controller.js';
-import { 
-  getProjects, 
-  getCurrentProjectIndex, 
-  setCurrentProjectIndex, 
-  setActiveAgency, 
-  addProject, 
-  addMissionToCurrentProject 
+import {
+  getProjects,
+  setCurrentProjectIndex,
+  setActiveAgency,
+  addProject,
+  addMissionToCurrentProject
 } from '../storage.js';
-import { renderCategoryDropdown, renderProjectDropdown } from './layout.js';
+import { renderCategoryDropdown, renderProjectDropdown, applySavedTheme } from './layout.js';
 
 // ==========================================
 // 1. GLOBAL UI LISTENERS (Active on ALL pages)
@@ -17,37 +16,45 @@ export function initGlobalListeners() {
     const target = e.target.closest('button, a, .view-tab-btn, .agency-tab-btn');
     if (!target) return;
 
-    const text = target.textContent.trim().toLowerCase();
+    const text = (target.textContent || '').trim().toLowerCase();
     const id = (target.id || '').toLowerCase();
     const className = (typeof target.className === 'string' ? target.className : '').toLowerCase();
 
-    // A. Agency Switching
-    if (text.includes('yuri') || text.includes('sss') || id.includes('sss') || id.includes('yuri')) {
-      document.body.classList.remove('wise-theme');
-      document.body.classList.add('sss-theme');
-      setActiveAgency('SSS');
-      const projects = getProjects();
-      const sssIndex = projects.findIndex(p => p.name && (p.name.toLowerCase().includes('sss') || p.name.toLowerCase().includes('yuri')));
-      setCurrentProjectIndex(sssIndex !== -1 ? sssIndex : Math.min(1, projects.length - 1));
-      renderApp();
-      return;
-    }
-    
-    if ((text.includes('wise') || text.includes('twilight') || id.includes('wise')) && !text.includes('archives')) {
-      document.body.classList.remove('sss-theme');
-      document.body.classList.add('wise-theme');
-      setActiveAgency('WISE');
-      setCurrentProjectIndex(0);
-      renderApp();
+    // A. Global Light Switch (1st click / toggle ON <-> OFF)
+    const switchBtn = e.target.closest('#theme-toggle-btn, [id*="theme"], [class*="theme-toggle"]');
+    if (switchBtn || text.includes('light:') || text.includes('light mode') || text.includes('theme')) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentlyOff = localStorage.getItem('wise_light_off') === 'true';
+      localStorage.setItem('wise_light_off', String(!currentlyOff));
+      applySavedTheme();
       return;
     }
 
-    // B. Global Theme Toggle Button
-    if (id.includes('theme') || text.includes('theme') || className.includes('theme')) {
-      document.body.classList.toggle('dark-theme');
-      const isDark = document.body.classList.contains('dark-theme');
-      localStorage.setItem('wise_dark_theme', isDark);
-      return;
+    // B. Agency Switching (only for non-link tabs/buttons or without href)
+    if (target.tagName !== 'A' || !target.getAttribute('href')) {
+      if (text.includes('yuri') || text.includes('sss') || id.includes('sss') || id.includes('yuri')) {
+        document.body.classList.remove('wise-theme');
+        document.body.classList.add('sss-theme');
+        setActiveAgency('SSS');
+        const projects = getProjects();
+        const sssIndex = projects.findIndex(
+          (p) => p.name && (p.name.toLowerCase().includes('sss') || p.name.toLowerCase().includes('yuri'))
+        );
+        setCurrentProjectIndex(sssIndex !== -1 ? sssIndex : Math.min(1, projects.length - 1));
+        renderApp();
+        return;
+      }
+
+      if ((text.includes('wise') || text.includes('twilight') || id.includes('wise')) && !text.includes('archives')) {
+        document.body.classList.remove('sss-theme');
+        document.body.classList.add('wise-theme');
+        setActiveAgency('WISE');
+        setCurrentProjectIndex(0);
+        renderApp();
+        return;
+      }
     }
 
     // C. View Switching Tabs (Board, Calendar, Prepare, Insights, Dev, Comms)
@@ -60,7 +67,7 @@ export function initGlobalListeners() {
     else if (text.includes('dev') || id.includes('dev')) mode = 'developer';
     else if (text.includes('comms') || text.includes('automations')) mode = 'automations';
 
-    if (mode) {
+    if (mode && (target.tagName !== 'A' || !target.getAttribute('href'))) {
       setCurrentViewMode(mode);
       renderApp();
       return;
@@ -69,7 +76,6 @@ export function initGlobalListeners() {
     // D. Mission Status Filters
     if (['all', 'inactive', 'pending', 'fulfilled', 'accomplished'].includes(text)) {
       renderApp(text);
-      return;
     }
   });
 }
@@ -110,8 +116,18 @@ export function initDossierListeners() {
 
       const finishMissionCreation = (imageBase64 = '') => {
         addMissionToCurrentProject({
-          title, description, dueDate, threatLevel, category, notes, spreadsheet, attachment, imageBase64,
-          accomplished: false, checklist: [], comments: []
+          title,
+          description,
+          dueDate,
+          threatLevel,
+          category,
+          notes,
+          spreadsheet,
+          attachment,
+          imageBase64,
+          accomplished: false,
+          checklist: [],
+          comments: []
         });
         missionForm.reset();
         renderCategoryDropdown();
@@ -136,7 +152,7 @@ export function initDossierListeners() {
       const titleInput = document.getElementById('mission-title');
       const descInput = document.getElementById('mission-desc');
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      
+
       if (!SpeechRecognition) {
         alert('🎙️ Native Speech Recognition API is not supported in this browser environment.');
         return;

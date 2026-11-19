@@ -8,7 +8,8 @@ import {
 import { 
   initLayout,
   getCategories,
-  saveCategories
+  saveCategories,
+  applySavedTheme
 } from '../dom.controllers/layout.js';
 import { 
   initGlobalListeners 
@@ -24,8 +25,6 @@ import {
   saveCommsConfig 
 } from '../storage.js';
 
-let currentViewMode = 'board';
-
 // Helper to ensure the main title always reads CLASSIFIED X DOSSIERS
 const enforceClassifiedTitle = () => {
   const mainTitle = document.querySelector('h1');
@@ -35,10 +34,14 @@ const enforceClassifiedTitle = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Restore saved room light state immediately on load
+  applySavedTheme();
+
   // 1. BOOT UP THE COVER SCREEN OVERLAY FIRST ON EVERY LOAD
   initCover((codename) => {
     // 2. Once authorized, initialize layout, modular listeners, and render views
     initLayout();
+    applySavedTheme();
     initGlobalListeners();
     initDossierListeners();
     renderApp();
@@ -64,11 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
-
-  // Restore Theme Preference on Load
-  if (localStorage.getItem('wise_dark_theme') === 'true') {
-    document.body.classList.add('dark-theme');
-  }
 
   // Backups and File Imports (Event Delegation for non-view buttons)
   if (!window._globalBackupsInitialized) {

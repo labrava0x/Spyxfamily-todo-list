@@ -343,3 +343,20 @@ body.light-paper-theme .mission-card {
   background-color: #fcf9f2 !important;
   border-color: #c9b793 !important;
 }
+/* Smooth room light transition */
+html,
+body {
+  transition: filter 0.18s ease;
+}
+
+/* Light ON (1st click, 3rd click, ...): noticeably BRIGHTER */
+html.light-on-bright,
+body.light-on-bright {
+  filter: brightness(1.18) contrast(1.04) !important;
+}
+
+/* Light OFF (2nd click, 4th click, ...): noticeably DARKER, still readable */
+html.lights-dimmed,
+body.lights-dimmed {
+  filter: brightness(0.68) !important;
+}

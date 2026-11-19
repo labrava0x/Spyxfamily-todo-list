@@ -3,6 +3,29 @@ import { getProjects, getCurrentProjectIndex, setCurrentProjectIndex, addProject
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
 let activeCommsTab = 'board';
 
+function toggleRoomLightState(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const hasClickedBefore = localStorage.getItem('wise_light_clicked') === 'true';
+  const currentlyOff = localStorage.getItem('wise_light_off') === 'true';
+
+  let nextOff;
+  if (!hasClickedBefore) {
+    // 1st click -> Light ON (BRIGHTER)
+    localStorage.setItem('wise_light_clicked', 'true');
+    nextOff = false;
+  } else {
+    // 2nd click -> Light OFF (DARKER), 3rd click -> Light ON (BRIGHTER), 4th click -> Light OFF (DARKER)...
+    nextOff = !currentlyOff;
+  }
+
+  localStorage.setItem('wise_light_off', String(nextOff));
+  applySavedTheme();
+}
+
 export function setActiveCommsTab(tabName = 'board') {
   activeCommsTab = String(tabName || 'board').trim().toLowerCase();
   syncCommsSubTabs();
@@ -74,7 +97,7 @@ export function renderProjectDropdown() {
 
   select.innerHTML = '';
   projects.forEach((project, index) => {
-    const opt = document.option ? document.createElement('option') : document.createElement('option');
+    const opt = document.createElement('option');
     opt.value = index;
     opt.textContent = project.name;
     if (index === currentIndex) opt.selected = true;
@@ -82,16 +105,28 @@ export function renderProjectDropdown() {
   });
 }
 
+export function applySavedTheme() {
+  const hasClickedBefore = localStorage.getItem('wise_light_clicked') === 'true';
+  const isLightOff = localStorage.getItem('wise_light_off') === 'true';
+  const isLightOnBright = hasClickedBefore && !isLightOff;
+
+  document.documentElement.classList.toggle('lights-dimmed', isLightOff);
+  document.body.classList.toggle('lights-dimmed', isLightOff);
+
+  document.documentElement.classList.toggle('light-on-bright', isLightOnBright);
+  document.body.classList.toggle('light-on-bright', isLightOnBright);
+
+  const themeToggleBtn = document.getElementById('theme-toggle-btn');
+  if (themeToggleBtn) {
+    themeToggleBtn.setAttribute('aria-pressed', String(!isLightOff));
+    themeToggleBtn.textContent = isLightOff ? '🔌 Light: OFF' : '💡 Light: ON';
+    themeToggleBtn.onclick = toggleRoomLightState;
+  }
+}
+
 export function initLayout() {
   const app = document.getElementById('app');
   if (!app) return;
-
-  const savedDark = localStorage.getItem('wise_dark_theme') === 'true';
-  if (savedDark) {
-    document.body.classList.add('dark-theme');
-  } else {
-    document.body.classList.remove('dark-theme');
-  }
 
   const path = window.location.pathname;
   const isYuriPage = path.includes('yuri');
@@ -111,7 +146,7 @@ export function initLayout() {
           <header class="title-card-header" style="margin-bottom: 1rem;">
             <div class="header-top-bar">
               <div class="header-actions">
-                <button type="button" id="theme-toggle-btn" class="secondary-btn">🌓 Toggle Theme</button>
+                <button type="button" id="theme-toggle-btn" class="secondary-btn">💡 Light: ON</button>
                 <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
                 <label class="secondary-btn file-input-label">
                   📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
@@ -142,7 +177,7 @@ export function initLayout() {
 
           <!-- Central Operations Terminal Container -->
           <div class="dossier-folder comms-hub-folder" style="max-width: 1400px; margin: 0 auto;">
-        <div class="archive-subtitle comms-hub-sticker-tab">COMMS HUB // TOP SECRET</div>
+            <div class="archive-subtitle comms-hub-sticker-tab">COMMS HUB // TOP SECRET</div>
             <h2>CENTRAL OPERATIONS: ANYA KNOWS WHAT YOU ARE THINKING!</h2>
 
             <div class="bond-comms-banner">
@@ -168,11 +203,10 @@ export function initLayout() {
           </div>
         </div>
       `;
-
-      setupThemeToggle();
     }
 
     syncCommsSubTabs(activeCommsTab);
+    setupThemeToggle();
     return;
   }
 
@@ -186,7 +220,7 @@ export function initLayout() {
     <header class="title-card-header">
       <div class="header-top-bar">
         <div class="header-actions">
-          <button type="button" id="theme-toggle-btn" class="secondary-btn">🌓 Toggle Theme</button>
+          <button type="button" id="theme-toggle-btn" class="secondary-btn">💡 Light: ON</button>
           <button type="button" id="export-json-btn" class="secondary-btn">💾 Export Backup</button>
           <label class="secondary-btn file-input-label">
             📂 Import Backup <input type="file" id="import-json-file" accept=".json" style="display: none;" />
@@ -312,12 +346,5 @@ export function initLayout() {
 }
 
 function setupThemeToggle() {
-  const themeToggleBtn = document.getElementById('theme-toggle-btn');
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
-      document.body.classList.toggle('dark-theme');
-      const isDark = document.body.classList.contains('dark-theme');
-      localStorage.setItem('wise_dark_theme', isDark);
-    });
-  }
+  applySavedTheme();
 }
