@@ -3,6 +3,7 @@ import {
   renderAgencySwitcher,
   resolveTargetContainer,
   getActiveAgency,
+  setActiveAgency,
   getAgencyProjects,
   saveAgencyProjects,
   attachAgencySwitcherListeners
@@ -51,7 +52,7 @@ function renderDancingMenDoodleSection(agencyPrefix) {
         <h3 style="margin: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981;">
           🕵️ Cipher & Doodle
         </h3>
-        <button type="button" class="secondary-btn clear-doodle-btn" data-canvas-id="${canvasId}" style="font-size: 0.8rem; padding: 0.25rem 0.6rem; background: #10b981; color: #fff; border: 1px solid #059669; cursor: pointer;">Wipe Cipher</button>
+        <button type="button" class="secondary-btn clear-doodle-btn" data-canvas-id="${canvasId}" style="font-size: 0.8rem; padding: 0.25rem 0.6rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Wipe Cipher</button>
       </div>
       <canvas id="${canvasId}" width="800" height="200" style="background: #ffffff; border: 1px solid #db7093; width: 100%; cursor: crosshair; touch-action: none; display: block;"></canvas>
       <div style="font-size: 0.75rem; color: #581c87; margin-top: 0.4rem; font-style: italic;">
@@ -180,7 +181,7 @@ export function renderInsightsView(container, renderCallback) {
           type="button"
           class="insights-agency-tab"
           data-agency="WISE"
-          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #ffffff !important; ${!isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
+          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #12151c !important; ${!isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
         >
           🕵️ WISE HQ
         </button>
@@ -188,7 +189,7 @@ export function renderInsightsView(container, renderCallback) {
           type="button"
           class="insights-agency-tab"
           data-agency="SSS"
-          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #ffffff !important; ${isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
+          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #12151c !important; ${isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
         >
           🛡️ SSS BUREAU
         </button>
@@ -299,7 +300,7 @@ export function renderPrepareMissionView(container, renderCallback) {
             <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
             <textarea id="general-prep-script" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${generalPrep.briefingScript || ''}</textarea>
           </div>
-          <button type="button" id="save-general-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #fff; border: 1px solid #059669; cursor: pointer;">Save General Briefing</button>
+          <button type="button" id="save-general-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save General Briefing</button>
         </div>
       </div>
   `;
@@ -327,7 +328,7 @@ export function renderPrepareMissionView(container, renderCallback) {
               <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
               <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${prep.briefingScript || ''}</textarea>
             </div>
-            <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #fff; border: 1px solid #059669; cursor: pointer;">Save Mission Briefing</button>
+            <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save Mission Briefing</button>
           </div>
         </div>
       `;

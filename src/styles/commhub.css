@@ -114,23 +114,32 @@ body {
 .agency-tab-btn.active,
 .comms-sub-tabs .project-btn.active {
   background-color: #16a085 !important; /* Anya's emerald-green eye color */
-  color: #ffffff !important;
+  color: #12151c !important;
   border-color: #1abc9c !important;
   box-shadow: 0 0 10px rgba(22, 160, 133, 0.5) !important;
 }
 
 /* Main View Terminal Container */
 #main-content-container table {
-  background-color: #ffb6c1 !important;
-  color: #111827 !important;
+  background-color: #f4a4b8 !important;
+  color: #065f46 !important;
   border-color: #db7093 !important;
 }
 
 #main-content-container thead,
-#main-content-container th {
+#main-content-container thead tr,
+#main-content-container thead th {
   background-color: #10b981 !important;
-  color: #ffffff !important;
+  color: #12151c !important;
   border-color: #059669 !important;
+}
+
+#main-content-container tbody,
+#main-content-container tbody tr,
+#main-content-container tbody td {
+  background-color: #f4a4b8 !important;
+  color: #065f46 !important;
+  border-color: #db7093 !important;
 }
 
 .mission-compact-header,

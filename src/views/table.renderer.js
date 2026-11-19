@@ -27,7 +27,7 @@ export function renderTableView(container, renderCallback) {
   `;
 
   if (missions.length === 0) {
-    html += `<p class="no-missions" style="text-align: center; color: #581c87; font-style: italic; background: #ffb6c1; border: 1px solid #db7093; padding: 1rem;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'}.</p></div>`;
+    html += `<p class="no-missions" style="text-align: center; color: #065f46; font-weight: bold; font-style: italic; background: #f4a4b8; border: 1px solid #db7093; padding: 1rem;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'}.</p></div>`;
     target.innerHTML = html;
     attachAgencySwitcherListeners(target, 'table', renderCallback);
     return;
@@ -35,27 +35,30 @@ export function renderTableView(container, renderCallback) {
 
   html += `
       <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; background: #ffb6c1; border: 1px solid #db7093;">
+        <table style="width: 100%; border-collapse: collapse; background: #f4a4b8 !important; border: 1px solid #db7093;">
           <thead>
-            <tr style="background: #10b981; color: #ffffff; border-bottom: 2px solid #059669; text-align: left; font-family: 'Anton', sans-serif;">
-              <th style="padding: 8px;">Status</th>
-              <th style="padding: 8px;">Title</th>
-              <th style="padding: 8px;">Category</th>
-              <th style="padding: 8px;">Threat</th>
-              <th style="padding: 8px;">Deadline</th>
+            <tr style="background: #10b981 !important; color: #12151c !important; border-bottom: 2px solid #059669; text-align: left; font-family: 'Anton', sans-serif;">
+              <th style="padding: 8px; background: #10b981 !important; color: #12151c !important;">Status</th>
+              <th style="padding: 8px; background: #10b981 !important; color: #12151c !important;">Title</th>
+              <th style="padding: 8px; background: #10b981 !important; color: #12151c !important;">Category</th>
+              <th style="padding: 8px; background: #10b981 !important; color: #12151c !important;">Threat</th>
+              <th style="padding: 8px; background: #10b981 !important; color: #12151c !important;">Deadline</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody style="background: #f4a4b8 !important;">
   `;
 
   missions.forEach((m, idx) => {
+    const rowBg = idx % 2 === 0 ? '#f4a4b8' : '#ffb6c1';
+    const doneStyle = m.accomplished ? 'text-decoration: line-through; opacity: 0.65;' : '';
+
     html += `
-      <tr style="border-bottom: 1px solid #db7093; background: ${idx % 2 === 0 ? '#fff5f6' : '#ffe4e9'};">
-        <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} style="accent-color: #10b981;" /></td>
-        <td style="padding: 8px; font-weight: bold; color: #111827; text-decoration: ${m.accomplished ? 'line-through' : 'none'}; opacity: ${m.accomplished ? '0.6' : '1'};">${m.title}</td>
-        <td style="padding: 8px; color: #065f46; font-weight: bold;">${m.category || 'Mission'}</td>
-        <td style="padding: 8px; color: #111827;">${m.threatLevel || 'Medium'}</td>
-        <td style="padding: 8px; color: #374151; font-family: monospace;">${m.dueDate || 'None'}</td>
+      <tr style="border-bottom: 1px solid #db7093; background: ${rowBg} !important; color: #065f46 !important;">
+        <td style="padding: 8px; background: ${rowBg} !important; color: #065f46 !important;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} style="accent-color: #10b981;" /></td>
+        <td style="padding: 8px; background: ${rowBg} !important; color: #065f46 !important; font-weight: bold; ${doneStyle}">${m.title}</td>
+        <td style="padding: 8px; background: ${rowBg} !important; color: #065f46 !important; font-weight: bold;">${m.category || 'Mission'}</td>
+        <td style="padding: 8px; background: ${rowBg} !important; color: #065f46 !important; font-weight: bold;">${m.threatLevel || 'Medium'}</td>
+        <td style="padding: 8px; background: ${rowBg} !important; color: #065f46 !important; font-family: monospace;">${m.dueDate || 'None'}</td>
       </tr>
     `;
   });
