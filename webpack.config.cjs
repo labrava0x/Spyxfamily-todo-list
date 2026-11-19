@@ -4,9 +4,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   mode: 'development',
   entry: {
-    index: './src/index/index.js',           // WISE page script
-    yuri: './src/yuri/yuri.js',             // SSS Yuri page script
-    operations: './src/operations/operations.js' // Calendar, Board, Comms Hub script
+    index: './src/index/index.js',
+    yuri: './src/yuri/yuri.js',
+    operations: './src/operations/operations.js'
   },
   output: {
     filename: '[name].bundle.js',
@@ -17,19 +17,16 @@ module.exports = {
     static: './dist',
   },
   plugins: [
-    // Page 1: WISE Headquarters
     new HtmlWebpackPlugin({
       template: './src/index/index.html',
       filename: 'index.html',
       chunks: ['index'],
     }),
-    // Page 2: SSS Yuri Bureau
     new HtmlWebpackPlugin({
       template: './src/yuri/yuri.html',
       filename: 'yuri.html',
       chunks: ['yuri'],
     }),
-    // Page 3: Central Operations Hub (Calendar, Board, Comms)
     new HtmlWebpackPlugin({
       template: './src/operations/operations.html',
       filename: 'operations.html',
@@ -39,7 +36,17 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.css$/i,
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env', '@babel/preset-react']
+          }
+        }
+      },
+      {
+        test: /\.css$/,
         use: ['style-loader', 'css-loader'],
       },
     ],

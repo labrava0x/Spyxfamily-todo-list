@@ -1,11 +1,16 @@
-// ==========================================
-// CENTRAL COMMS HUB: OPERATIONS EVENT LISTENERS
-// ==========================================
+import { renderBoardView } from '../dom.controllers/board.renderer.js';
+import { renderCalendarGridView } from '../views/calendar.renderer.js';
+import { renderTableView } from '../views/table.renderer.js';
+import { renderDeveloperView } from '../views/dev.renderer.js';
+import { renderAutomationsView } from '../views/automations.renderer.js';
+import { renderApp } from '../dom.controllers/dom.controller.js';
 
 export function initOperationsListeners() {
-  // 1. Comms Hub Sub-Tab Navigation / Button Clicks
   const commsContainer = document.querySelector('.comms-hub-folder');
   if (!commsContainer) return; // Only run if we are actually on operations.html
+
+  // Target container where the views will be injected
+  const contentContainer = document.getElementById('mission-container') || commsContainer;
 
   commsContainer.addEventListener('click', (e) => {
     const target = e.target.closest('button');
@@ -15,15 +20,29 @@ export function initOperationsListeners() {
 
     // Handle internal sub-view switches inside the Comms Hub
     if (id.startsWith('view-') && id.endsWith('-btn')) {
-      // You can manage active states or specific sub-tab rendering here
-      const allSubTabs = commsContainer.querySelectorAll('.view-tab-btn');
-      allSubTabs.forEach(btn => btn.classList.remove('active'));
+      const allTabs = commsContainer.querySelectorAll('.view-tab-btn');
+      allTabs.forEach(btn => btn.classList.remove('active'));
       target.classList.add('active');
-      
-      // Example: Log active secure relay view
-      console.log(`[COMMS HUB] Switched active sub-view matrix: ${target.textContent.trim()}`);
+    }
+
+    // Route the click to the correct imported renderer module!
+    if (id === 'view-board-btn') {
+      renderBoardView(contentContainer, renderApp);
+    } 
+    else if (id === 'view-prep-btn') {
+      renderApp(contentContainer);
+    } 
+    else if (id === 'view-calendar-btn') {
+      renderCalendarGridView(contentContainer, renderApp);
+    } 
+    else if (id === 'view-table-btn') {
+      renderTableView(contentContainer, renderApp);
+    } 
+    else if (id === 'view-dev-btn') {
+      renderDeveloperOverview(contentContainer, renderApp);
+    } 
+    else if (id === 'view-automations-btn') {
+      renderAutomationsView(contentContainer, renderApp);
     }
   });
-
-  // 2. Add any future custom command relay inputs, radar toggles, or Bond alert interactions here!
 }
