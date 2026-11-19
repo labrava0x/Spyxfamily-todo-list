@@ -2,9 +2,11 @@ import { getProjects, getCurrentProjectIndex, setCurrentProjectIndex } from '../
 
 const DEFAULT_CATEGORIES = ['Mission', 'Personal', 'Job'];
 const CODENAME_KEY = 'wise_agent_name';
+const HAS_ENTERED_ONCE_KEY = 'wise_agent_has_entered_once';
 
 let activeCommsTab = 'board';
 let activeSessionCodename = '';
+let isReturningAgentSession = false;
 
 function normalizeCodename(raw) {
   if (!raw) return '';
@@ -16,13 +18,21 @@ function normalizeCodename(raw) {
   return String(raw).trim();
 }
 
-export function setActiveCodename(rawCodename) {
+export function setActiveCodename(rawCodename, options = {}) {
   const cleanName = normalizeCodename(rawCodename);
+  const alreadyEnteredBefore = sessionStorage.getItem(HAS_ENTERED_ONCE_KEY) === 'true';
+
   if (cleanName) {
     activeSessionCodename = cleanName;
     localStorage.setItem(CODENAME_KEY, cleanName);
   }
-  renderAgentCodenameBadge(cleanName || activeSessionCodename);
+
+  if (options.isReturn || alreadyEnteredBefore) {
+    isReturningAgentSession = true;
+  }
+  sessionStorage.setItem(HAS_ENTERED_ONCE_KEY, 'true');
+
+  renderAgentCodenameBadge(cleanName || activeSessionCodename, isReturningAgentSession);
   return cleanName;
 }
 
@@ -36,7 +46,7 @@ export function getActiveCodename() {
   return '';
 }
 
-export function renderAgentCodenameBadge(rawCodename = '') {
+export function renderAgentCodenameBadge(rawCodename = '', returning = isReturningAgentSession) {
   const explicit = normalizeCodename(rawCodename);
   const codename = explicit || getActiveCodename();
 
@@ -49,7 +59,10 @@ export function renderAgentCodenameBadge(rawCodename = '') {
   if (!badge) return;
 
   if (codename) {
-    badge.innerHTML = `<span class="inside-codename-tab">TOP SECRET</span><span class="inside-codename-bar">Agent X ${codename} is in</span>`;
+    const phrase = returning
+      ? `welcome back in agent x ${codename}`
+      : `Agent X ${codename} is in`;
+    badge.innerHTML = `<span class="inside-codename-tab">TOP SECRET</span><span class="inside-codename-bar">${phrase}</span>`;
     badge.classList.add('authorized');
   } else {
     badge.innerHTML = `<span class="inside-codename-tab">TOP SECRET</span><span class="inside-codename-bar">Agent X is awaiting entry</span>`;

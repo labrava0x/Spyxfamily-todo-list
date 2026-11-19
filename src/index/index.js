@@ -7,6 +7,8 @@ import {
 } from '../dom.controllers/dom.controller.js';
 import { 
   initLayout,
+  setActiveCodename,
+  renderAgentCodenameBadge,
   getCategories,
   saveCategories,
   applySavedTheme
@@ -37,20 +39,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Restore saved room light state immediately on load
   applySavedTheme();
 
-  // 1. BOOT UP THE COVER SCREEN OVERLAY FIRST ON EVERY LOAD
-  initCover((codename) => {
-    // 2. Once authorized, initialize layout, modular listeners, and render views
+  // 1. BOOT UP THE COVER SCREEN OVERLAY FIRST ON EVERY LOAD & IDLE RETURN
+  initCover((codename, meta = {}) => {
+    // 2. Once authorized, initialize layout, codename badge, modular listeners, and render views
     initLayout();
+    setActiveCodename(codename, meta);
     applySavedTheme();
     initGlobalListeners();
     initDossierListeners();
     renderApp();
+    renderAgentCodenameBadge(codename, meta.isReturn);
     enforceClassifiedTitle();
   });
 
-  // Watch for DOM updates to keep the title enforced
+  // Watch for DOM updates to keep the title and codename badge intact
   const observer = new MutationObserver(() => {
     enforceClassifiedTitle();
+    if (document.getElementById('active-agent-badge') && !document.getElementById('active-agent-badge').innerHTML) {
+      renderAgentCodenameBadge();
+    }
   });
   observer.observe(document.body, { childList: true, subtree: true });
 
