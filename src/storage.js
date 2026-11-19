@@ -5,12 +5,31 @@ let projects = [];
 let currentProjectIndex = 0;
 let currentAgency = 'WISE'; // Tracks active agency: 'WISE' or 'SSS'
 
-function getStorageKey() {
-  return currentAgency === 'SSS' ? 'sss_projects' : 'wise_projects';
+function normalizeAgency(agency = 'WISE') {
+  const val = String(agency || 'WISE').trim().toUpperCase();
+  if (val === 'SSS' || val === 'YURI' || val === 'SSS_BUREAU') {
+    return 'SSS';
+  }
+  return 'WISE';
+}
+
+function getStorageKey(agency = currentAgency) {
+  return normalizeAgency(agency) === 'SSS' ? 'sss_projects' : 'wise_projects';
+}
+
+function getCalendarStorageKey(agency = currentAgency) {
+  return normalizeAgency(agency) === 'SSS' ? 'sss_calendar_events' : 'wise_calendar_events';
+}
+
+export function getActiveAgency() {
+  return currentAgency;
 }
 
 export function setActiveAgency(agency) {
-  currentAgency = agency;
+  currentAgency = normalizeAgency(agency);
+  if (isStorageAvailable()) {
+    localStorage.setItem('active_agency', currentAgency);
+  }
   initStorage();
 }
 
@@ -34,31 +53,35 @@ export function initStorage() {
 
   const storageKey = getStorageKey();
   const savedData = localStorage.getItem(storageKey);
-  
+
   if (savedData) {
     try {
       const parsedData = JSON.parse(savedData);
-      projects = parsedData.map(pData => {
-        const project = new Project(pData.name);
-        project.missions = (pData.missions || []).map(m => {
-          const mission = new Mission(
-            m.title, 
-            m.description, 
-            m.dueDate, 
-            m.threatLevel, 
-            m.notes, 
-            m.checklist || []
-          );
-          mission.accomplished = m.accomplished || false;
-          mission.spreadsheet = m.spreadsheet || '';
-          mission.attachment = m.attachment || '';
-          mission.imageBase64 = m.imageBase64 || '';
-          return mission;
+      if (Array.isArray(parsedData) && parsedData.length > 0) {
+        projects = parsedData.map(pData => {
+          const project = new Project(pData.name || 'Operation Sector');
+          project.missions = (pData.missions || []).map(m => {
+            const mission = new Mission(
+              m.title,
+              m.description,
+              m.dueDate,
+              m.threatLevel,
+              m.notes,
+              m.checklist || []
+            );
+            mission.accomplished = Boolean(m.accomplished);
+            mission.spreadsheet = m.spreadsheet || '';
+            mission.attachment = m.attachment || '';
+            mission.imageBase64 = m.imageBase64 || '';
+            return mission;
+          });
+          return project;
         });
-        return project;
-      });
-      if (currentProjectIndex >= projects.length) {
-        currentProjectIndex = 0;
+        if (currentProjectIndex >= projects.length || currentProjectIndex < 0) {
+          currentProjectIndex = 0;
+        }
+      } else {
+        loadDefaultData();
       }
     } catch (e) {
       console.error("Failed to parse local storage data, loading defaults.", e);
@@ -73,32 +96,36 @@ function loadDefaultData() {
   projects = [];
   const defaultName = currentAgency === 'SSS' ? 'SSS Operations (Yuri)' : 'WISE Operations';
   const defaultProj = new Project(defaultName);
-  
+
   if (currentAgency === 'WISE') {
     defaultProj.addMission(new Mission(
-      "Infiltrate Eden Academy", 
-      "Secure proximity to target's son.", 
-      "2026-11-20", 
-      "Critical", 
-      "Must maintain elegant demeanor.", 
+      "Infiltrate Eden Academy",
+      "Secure proximity to target's son.",
+      "2026-11-20",
+      "Critical",
+      "Must maintain elegant demeanor.",
       [{ text: "Secure bespoke suit", completed: false }]
     ));
   } else {
     defaultProj.addMission(new Mission(
-      "Monitor Twilight", 
-      "Keep a close eye on Loid Forger's movements.", 
-      "2026-11-25", 
-      "High", 
-      "Protect Yor at all costs!", 
+      "Monitor Twilight",
+      "Keep a close eye on Loid Forger's movements.",
+      "2026-11-25",
+      "High",
+      "Protect Yor at all costs!",
       [{ text: "Review surveillance logs", completed: false }]
     ));
   }
-  
+
   projects.push(defaultProj);
   saveStorage();
 }
 
 export function saveStorage() {
+  if (!Array.isArray(projects) || projects.length === 0) {
+    loadDefaultData();
+    return;
+  }
   if (isStorageAvailable()) {
     localStorage.setItem(getStorageKey(), JSON.stringify(projects));
   }
@@ -113,11 +140,17 @@ export function getCurrentProjectIndex() {
 }
 
 export function setCurrentProjectIndex(index) {
-  currentProjectIndex = index;
+  const parsed = Number(index);
+  if (!Number.isNaN(parsed) && parsed >= 0 && parsed < projects.length) {
+    currentProjectIndex = parsed;
+  } else {
+    currentProjectIndex = 0;
+  }
 }
 
 export function addProject(name) {
-  projects.push(new Project(name));
+  const cleanName = String(name || '').trim() || `Sector ${projects.length + 1}`;
+  projects.push(new Project(cleanName));
   currentProjectIndex = projects.length - 1;
   saveStorage();
 }
@@ -127,6 +160,7 @@ export function deleteProject(index) {
     alert("Operation sector cannot be empty. Maintain at least one active sector.");
     return;
   }
+  if (index < 0 || index >= projects.length) return;
   projects.splice(index, 1);
   if (currentProjectIndex >= projects.length) {
     currentProjectIndex = projects.length - 1;
@@ -134,31 +168,44 @@ export function deleteProject(index) {
   saveStorage();
 }
 
-export function addMissionToCurrentProject(missionData) {
+export function addMissionToCurrentProject(missionData, targetDate = '') {
+  if (!Array.isArray(projects) || projects.length === 0) {
+    loadDefaultData();
+  }
+  const safeProjIndex =
+    currentProjectIndex >= 0 && currentProjectIndex < projects.length ? currentProjectIndex : 0;
+
+  const resolvedDueDate = missionData.dueDate || missionData.deadline || targetDate || '';
+
   const newMission = new Mission(
     missionData.title,
     missionData.description,
-    missionData.dueDate,
-    missionData.threatLevel,
+    resolvedDueDate,
+    missionData.threatLevel || missionData.threat || 'Medium',
     missionData.notes,
     missionData.checklist || []
   );
-  newMission.accomplished = missionData.accomplished || false;
+  newMission.accomplished = Boolean(missionData.accomplished);
   if (missionData.spreadsheet) newMission.spreadsheet = missionData.spreadsheet;
   if (missionData.attachment) newMission.attachment = missionData.attachment;
   if (missionData.imageBase64) newMission.imageBase64 = missionData.imageBase64;
 
-  projects[currentProjectIndex].addMission(newMission);
+  projects[safeProjIndex].addMission(newMission);
   saveStorage();
+  return newMission;
 }
 
 export function deleteMission(projectIndex, missionIndex) {
-  projects[projectIndex].missions.splice(missionIndex, 1);
+  const proj = projects[projectIndex];
+  if (!proj || !Array.isArray(proj.missions)) return;
+  if (missionIndex < 0 || missionIndex >= proj.missions.length) return;
+  proj.missions.splice(missionIndex, 1);
   saveStorage();
 }
 
 export function updateMission(projectIndex, missionIndex, title, desc, date, threat, notes) {
-  const mission = projects[projectIndex].missions[missionIndex];
+  const proj = projects[projectIndex];
+  const mission = proj && proj.missions ? proj.missions[missionIndex] : null;
   if (mission) {
     mission.updateDetails(title, desc, date, threat, notes);
     saveStorage();
@@ -166,13 +213,71 @@ export function updateMission(projectIndex, missionIndex, title, desc, date, thr
 }
 
 export function toggleMissionStatus(projectIndex, missionIndex) {
-  projects[projectIndex].missions[missionIndex].toggleStatus();
-  saveStorage();
+  const proj = projects[projectIndex];
+  const mission = proj && proj.missions ? proj.missions[missionIndex] : null;
+  if (mission) {
+    mission.toggleStatus();
+    saveStorage();
+  }
 }
 
 export function toggleChecklistItem(projectIndex, missionIndex, checkIndex) {
-  projects[projectIndex].missions[missionIndex].toggleChecklistItem(checkIndex);
-  saveStorage();
+  const proj = projects[projectIndex];
+  const mission = proj && proj.missions ? proj.missions[missionIndex] : null;
+  if (mission) {
+    mission.toggleChecklistItem(checkIndex);
+    saveStorage();
+  }
+}
+
+// --- Calendar Events & Entries Storage (Per Agency) ---
+
+export function getCalendarEvents(agency = currentAgency) {
+  if (!isStorageAvailable()) return [];
+  const raw = localStorage.getItem(getCalendarStorageKey(agency));
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn("Failed to parse calendar events from localStorage:", e);
+    return [];
+  }
+}
+
+export function saveCalendarEvents(events, agency = currentAgency) {
+  if (!isStorageAvailable()) return [];
+  const list = Array.isArray(events) ? events : [];
+  localStorage.setItem(getCalendarStorageKey(agency), JSON.stringify(list));
+  return list;
+}
+
+export function addCalendarEvent(eventData, agency = currentAgency) {
+  const events = getCalendarEvents(agency);
+  const newEvent = {
+    id: eventData.id || `cal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    date: eventData.date || '', // Expected 'YYYY-MM-DD'
+    title: String(eventData.title || 'Scheduled Operation').trim(),
+    notes: String(eventData.notes || '').trim(),
+    threatLevel: eventData.threatLevel || eventData.threat || 'Medium',
+    completed: Boolean(eventData.completed),
+    createdAt: new Date().toISOString()
+  };
+  events.push(newEvent);
+  saveCalendarEvents(events, agency);
+  return newEvent;
+}
+
+export function toggleCalendarEvent(eventId, agency = currentAgency) {
+  const updated = getCalendarEvents(agency).map(ev =>
+    ev.id === eventId ? { ...ev, completed: !ev.completed } : ev
+  );
+  return saveCalendarEvents(updated, agency);
+}
+
+export function deleteCalendarEvent(eventId, agency = currentAgency) {
+  const filtered = getCalendarEvents(agency).filter(ev => ev.id !== eventId);
+  return saveCalendarEvents(filtered, agency);
 }
 
 // --- Comms, Automations & Category Storage ---

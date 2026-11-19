@@ -1,11 +1,11 @@
 import { getCurrentProjectIndex } from '../storage.js';
-import { 
-  getActiveAgency, 
-  getAgencyProjects, 
-  saveAgencyProjects, 
-  resolveTargetContainer, 
-  renderAgencySwitcher, 
-  attachAgencySwitcherListeners 
+import {
+  getActiveAgency,
+  getAgencyProjects,
+  saveAgencyProjects,
+  resolveTargetContainer,
+  renderAgencySwitcher,
+  attachAgencySwitcherListeners
 } from './agency.switcher.js';
 
 export function renderTableView(container, renderCallback) {
@@ -15,7 +15,7 @@ export function renderTableView(container, renderCallback) {
   const agency = getActiveAgency();
   const isYuri = agency === 'yuri';
   const projects = getAgencyProjects(agency);
-  
+
   const rawIndex = getCurrentProjectIndex() || 0;
   const activeIndex = projects[rawIndex] ? rawIndex : 0;
   const activeProject = projects[activeIndex];
@@ -27,7 +27,7 @@ export function renderTableView(container, renderCallback) {
   `;
 
   if (missions.length === 0) {
-    html += `<p class="no-missions" style="text-align: center; color: #7c6d57; font-style: italic;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'}.</p></div>`;
+    html += `<p class="no-missions" style="text-align: center; color: #581c87; font-style: italic; background: #ffb6c1; border: 1px solid #db7093; padding: 1rem;">No missions recorded for ${isYuri ? 'SSS Bureau' : 'WISE HQ'}.</p></div>`;
     target.innerHTML = html;
     attachAgencySwitcherListeners(target, 'table', renderCallback);
     return;
@@ -35,9 +35,9 @@ export function renderTableView(container, renderCallback) {
 
   html += `
       <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; background: #f7f1e1; border: 1px solid #8c7a5b;">
+        <table style="width: 100%; border-collapse: collapse; background: #ffb6c1; border: 1px solid #db7093;">
           <thead>
-            <tr style="background: #d6c098; border-bottom: 2px solid #8c7a5b; text-align: left; font-family: 'Anton', sans-serif;">
+            <tr style="background: #10b981; color: #ffffff; border-bottom: 2px solid #059669; text-align: left; font-family: 'Anton', sans-serif;">
               <th style="padding: 8px;">Status</th>
               <th style="padding: 8px;">Title</th>
               <th style="padding: 8px;">Category</th>
@@ -50,12 +50,12 @@ export function renderTableView(container, renderCallback) {
 
   missions.forEach((m, idx) => {
     html += `
-      <tr style="border-bottom: 1px solid #d6c098;">
-        <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} /></td>
-        <td style="padding: 8px; font-weight: bold; text-decoration: ${m.accomplished ? 'line-through' : 'none'}; opacity: ${m.accomplished ? '0.6' : '1'};">${m.title}</td>
-        <td style="padding: 8px;">${m.category || 'Mission'}</td>
-        <td style="padding: 8px;">${m.threatLevel || 'Medium'}</td>
-        <td style="padding: 8px;">${m.dueDate || 'None'}</td>
+      <tr style="border-bottom: 1px solid #db7093; background: ${idx % 2 === 0 ? '#fff5f6' : '#ffe4e9'};">
+        <td style="padding: 8px;"><input type="checkbox" data-index="${idx}" class="accomplished-checkbox" ${m.accomplished ? 'checked' : ''} style="accent-color: #10b981;" /></td>
+        <td style="padding: 8px; font-weight: bold; color: #111827; text-decoration: ${m.accomplished ? 'line-through' : 'none'}; opacity: ${m.accomplished ? '0.6' : '1'};">${m.title}</td>
+        <td style="padding: 8px; color: #065f46; font-weight: bold;">${m.category || 'Mission'}</td>
+        <td style="padding: 8px; color: #111827;">${m.threatLevel || 'Medium'}</td>
+        <td style="padding: 8px; color: #374151; font-family: monospace;">${m.dueDate || 'None'}</td>
       </tr>
     `;
   });

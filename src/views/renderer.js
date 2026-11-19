@@ -1,4 +1,4 @@
-import { getCurrentProjectIndex } from '../storage.js';
+import { getCurrentProjectIndex, getProjects } from '../storage.js';
 import {
   renderAgencySwitcher,
   resolveTargetContainer,
@@ -152,10 +152,60 @@ export function renderInsightsView(container, renderCallback) {
   const target = resolveTargetContainer(container);
   if (!target) return;
 
+  const agency = getActiveAgency();
+  const isYuri = agency === 'SSS' || agency === 'yuri';
+
+  const projects = getProjects() || [];
+  const rawIndex = getCurrentProjectIndex() || 0;
+  const activeIndex = projects[rawIndex] ? rawIndex : 0;
+  const activeProject = projects[activeIndex] || {
+    name: isYuri ? 'SSS Operations (Yuri)' : 'WISE Operations',
+    missions: []
+  };
+
+  const missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
+  const totalCount = missions.length;
+  const completedCount = missions.filter(m => Boolean(m.accomplished)).length;
+  const activeCount = totalCount - completedCount;
+  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const highThreatCount = missions.filter(m => {
+    const lvl = String(m.threatLevel || m.threat || m.priority || '').toLowerCase();
+    return lvl === 'high' || lvl === 'critical';
+  }).length;
+
   target.innerHTML = `
-    <div style="font-family: 'Special Elite', monospace; background: #ffb6c1; border: 1px solid #db7093; padding: 1.5rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-      <h3 style="color: #10b981; font-family: 'Anton', sans-serif; margin-top: 0; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">📊 Insights & Telemetry</h3>
-      <p style="color: #10b981; font-weight: bold;">Mission telemetry analysis module is currently calibrating data packets...</p>
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.25rem;">
+      <div style="background: #ffb6c1; border: 1px solid #db7093; border-left: 5px solid #10b981; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+        <h3 style="color: #10b981; font-family: 'Anton', sans-serif; margin-top: 0; border-bottom: 2px solid #10b981; padding-bottom: 0.35rem;">
+          📊 Insights & Telemetry — ${isYuri ? 'SSS BUREAU' : 'WISE HQ'} (${activeProject.name})
+        </h3>
+        <p style="color: #111827; font-size: 0.85rem; margin: 0.4rem 0 1rem;">
+          Live operational metrics computed from your active dossier missions.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.85rem;">
+          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">TOTAL MISSIONS</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${totalCount}</div>
+          </div>
+
+          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">ACTIVE</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${activeCount}</div>
+          </div>
+
+          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">ACCOMPLISHED</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${completedCount} (${completionRate}%)</div>
+          </div>
+
+          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
+            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">HIGH / CRITICAL</div>
+            <div style="font-size: 1.4rem; font-weight: bold; color: #991b1b; margin-top: 0.2rem;">${highThreatCount}</div>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -295,139 +345,6 @@ export function renderPrepareMissionView(container, renderCallback) {
 
       alert('🎯 Mission preparation briefing successfully saved!');
       if (typeof renderCallback === 'function') renderCallback();
-    });
-  });
-}
-
-/* ================================================================= *
-- TABLE LOG VIEW MODULE                                             *
-- ================================================================= */
-
-function getThreatStyle(threat = 'Medium') {
-  const level = String(threat).toLowerCase();
-  if (level === 'high' || level === 'critical') {
-    return 'background: #fee2e2; color: #991b1b; border: 1px solid #ef4444;';
-  }
-  if (level === 'low') {
-    return 'background: #d1fae5; color: #065f46; border: 1px solid #10b981;';
-  }
-  return 'background: #fef3c7; color: #92400e; border: 1px solid #f59e0b;';
-}
-
-export function renderTableView(container, renderCallback) {
-  const target = resolveTargetContainer(container);
-  if (!target) return;
-
-  const agency = getActiveAgency();
-  const isYuri = agency === 'yuri';
-
-  let projects = getAgencyProjects(agency);
-  if (!Array.isArray(projects)) projects = [];
-
-  let rawIndex = getCurrentProjectIndex() || 0;
-  if (rawIndex >= projects.length) rawIndex = 0;
-  const activeIndex = projects[rawIndex] ? rawIndex : 0;
-
-  const activeProject = projects[activeIndex] || {
-    name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
-    missions: []
-  };
-
-  const missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
-
-  const rowsHtml = missions.length === 0
-    ? `
-      <tr>
-        <td colspan="5" style="padding: 1.25rem; text-align: center; background: #fff5f6; color: #581c87; font-style: italic;">
-          No table entries recorded yet.
-        </td>
-      </tr>
-    `
-    : missions.map((mission, idx) => {
-        const done = Boolean(mission.accomplished);
-        const title = mission.title || 'Untitled Mission';
-        const category = mission.category || 'Mission';
-        const threat = mission.threat || mission.priority || 'Medium';
-        const deadline = mission.deadline || mission.dueDate || '—';
-
-        return `
-          <tr style="background: ${idx % 2 === 0 ? '#fff5f6' : '#ffe4e9'}; border-bottom: 1px solid #db7093;">
-            <td style="padding: 0.7rem 0.85rem; text-align: center;">
-              <input
-                type="checkbox"
-                class="accomplished-checkbox"
-                data-index="${idx}"
-                ${done ? 'checked' : ''}
-                style="accent-color: #10b981; width: 16px; height: 16px; cursor: pointer;"
-              />
-            </td>
-            <td style="padding: 0.7rem 0.85rem; font-weight: bold; color: #111827; ${done ? 'text-decoration: line-through; opacity: 0.65;' : ''}">
-              ${title}
-            </td>
-            <td style="padding: 0.7rem 0.85rem;">
-              <span style="background: #ffb6c1; color: #065f46; border: 1px solid #10b981; padding: 0.2rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: bold;">
-                ${category}
-              </span>
-            </td>
-            <td style="padding: 0.7rem 0.85rem;">
-              <span style="${getThreatStyle(threat)} padding: 0.2rem 0.55rem; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">
-                ${threat}
-              </span>
-            </td>
-            <td style="padding: 0.7rem 0.85rem; font-family: monospace; font-size: 0.85rem; color: #374151;">
-              ${deadline}
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-  target.innerHTML = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.25rem;">
-      ${renderAgencySwitcher('table', isYuri)}
-
-      <div style="background: #ffb6c1; border: 1px solid #db7093; border-left: 5px solid #10b981; padding: 0.9rem 1.2rem;">
-        <h3 style="margin: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981;">
-          📊 ${isYuri ? 'SSS BUREAU' : 'WISE HQ'} — TABLE LOG
-        </h3>
-        <p style="margin: 0.35rem 0 0; font-size: 0.85rem; color: #111827;">
-          Tabular dossier log for <strong>${activeProject.name}</strong>.
-        </p>
-      </div>
-
-      <div style="overflow-x: auto; background: #ffb6c1; border: 1px solid #db7093;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
-          <thead>
-            <tr style="background: #10b981; color: #ffffff; font-family: 'Anton', sans-serif; font-size: 0.85rem;">
-              <th style="padding: 0.7rem 0.85rem; width: 64px; text-align: center;">Done</th>
-              <th style="padding: 0.7rem 0.85rem;">Title</th>
-              <th style="padding: 0.7rem 0.85rem;">Category</th>
-              <th style="padding: 0.7rem 0.85rem;">Threat</th>
-              <th style="padding: 0.7rem 0.85rem;">Deadline</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  attachAgencySwitcherListeners(target, 'table', renderCallback);
-
-  target.querySelectorAll('.accomplished-checkbox').forEach((chk) => {
-    chk.addEventListener('change', (e) => {
-      const idx = Number(e.target.getAttribute('data-index'));
-      const freshProjects = getAgencyProjects(agency);
-      if (freshProjects[activeIndex] && freshProjects[activeIndex].missions[idx]) {
-        freshProjects[activeIndex].missions[idx].accomplished = e.target.checked;
-        saveAgencyProjects(agency, freshProjects);
-        if (typeof renderCallback === 'function') {
-          renderCallback();
-        } else {
-          renderTableView(container, renderCallback);
-        }
-      }
     });
   });
 }
