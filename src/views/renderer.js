@@ -147,7 +147,6 @@ function attachDoodleCanvasListeners(target) {
 /* ================================================================= *
 - INSIGHTS VIEW MODULE                                              *
 - ================================================================= */
-
 export function renderInsightsView(container, renderCallback) {
   const target = resolveTargetContainer(container);
   if (!target) return;
@@ -155,7 +154,7 @@ export function renderInsightsView(container, renderCallback) {
   const agency = getActiveAgency();
   const isYuri = agency === 'SSS' || agency === 'yuri';
 
-  const projects = getProjects() || [];
+  const projects = getAgencyProjects(agency) || [];
   const rawIndex = getCurrentProjectIndex() || 0;
   const activeIndex = projects[rawIndex] ? rawIndex : 0;
   const activeProject = projects[activeIndex] || {
@@ -175,7 +174,26 @@ export function renderInsightsView(container, renderCallback) {
   }).length;
 
   target.innerHTML = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.25rem;">
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1rem;">
+      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;">
+        <button
+          type="button"
+          class="insights-agency-tab"
+          data-agency="WISE"
+          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #ffffff !important; ${!isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
+        >
+          🕵️ WISE HQ
+        </button>
+        <button
+          type="button"
+          class="insights-agency-tab"
+          data-agency="SSS"
+          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #ffffff !important; ${isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
+        >
+          🛡️ SSS BUREAU
+        </button>
+      </div>
+
       <div style="background: #ffb6c1; border: 1px solid #db7093; border-left: 5px solid #10b981; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
         <h3 style="color: #10b981; font-family: 'Anton', sans-serif; margin-top: 0; border-bottom: 2px solid #10b981; padding-bottom: 0.35rem;">
           📊 Insights & Telemetry — ${isYuri ? 'SSS BUREAU' : 'WISE HQ'} (${activeProject.name})
@@ -208,6 +226,20 @@ export function renderInsightsView(container, renderCallback) {
       </div>
     </div>
   `;
+
+  target.querySelectorAll('.insights-agency-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const selected = btn.getAttribute('data-agency');
+      if (selected && selected !== getActiveAgency()) {
+        setActiveAgency(selected);
+        if (typeof renderCallback === 'function') {
+          renderCallback();
+        } else {
+          renderInsightsView(container, renderCallback);
+        }
+      }
+    });
+  });
 }
 
 /* ================================================================= *
