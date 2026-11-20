@@ -1,4 +1,4 @@
-import { renderPrepareMissionView, renderInsightsView } from '../views/renderer.js';
+import { renderPrepareMissionView, renderInsightsView } from '../views/prep.render.js';
 import { renderAutomationsView } from '../views/automations.renderer.js';
 import { renderCalendarGridView } from '../views/calendar.renderer.js';
 import { renderDeveloperView } from '../views/dev.renderer.js';

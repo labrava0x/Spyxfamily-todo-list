@@ -26,6 +26,8 @@ import {
   getCommsConfig,
   saveCommsConfig 
 } from '../storage.js';
+// Import from '../views/prep.render.js' in the view/listener module that renders Insights or Prepare:
+// import { renderInsightsView, renderPrepareMissionView } from '../views/prep.render.js';
 
 // Helper to ensure the main title always reads CLASSIFIED X DOSSIERS
 const enforceClassifiedTitle = () => {

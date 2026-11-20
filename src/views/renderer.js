@@ -44,7 +44,7 @@ function drawDancingMenTemplate(ctx) {
   drawDancingMan(220);
 }
 
-function renderDancingMenDoodleSection(agencyPrefix) {
+export function renderDancingMenDoodleSection(agencyPrefix) {
   const canvasId = `doodle-canvas-${agencyPrefix}`;
   return `
     <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); margin-top: 1.5rem;">
@@ -62,7 +62,7 @@ function renderDancingMenDoodleSection(agencyPrefix) {
   `;
 }
 
-function attachDoodleCanvasListeners(target) {
+export function attachDoodleCanvasListeners(target) {
   target.querySelectorAll('canvas[id^="doodle-canvas-"]').forEach(canvas => {
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
@@ -146,238 +146,111 @@ function attachDoodleCanvasListeners(target) {
 }
 
 /* ================================================================= *
-- INSIGHTS VIEW MODULE                                              *
+- PREPARE VOICE DICTATION HELPER                                    *
 - ================================================================= */
-export function renderInsightsView(container, renderCallback) {
-  const target = resolveTargetContainer(container);
-  if (!target) return;
 
-  const agency = getActiveAgency();
-  const isYuri = agency === 'SSS' || agency === 'yuri';
+const PrepareSpeechRecognition =
+  typeof window !== 'undefined'
+    ? window.SpeechRecognition || window.webkitSpeechRecognition || null
+    : null;
 
-  const projects = getAgencyProjects(agency) || [];
-  const rawIndex = getCurrentProjectIndex() || 0;
-  const activeIndex = projects[rawIndex] ? rawIndex : 0;
-  const activeProject = projects[activeIndex] || {
-    name: isYuri ? 'SSS Operations (Yuri)' : 'WISE Operations',
-    missions: []
-  };
+let activePrepRecognizer = null;
+let activePrepButton = null;
 
-  const missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
-  const totalCount = missions.length;
-  const completedCount = missions.filter(m => Boolean(m.accomplished)).length;
-  const activeCount = totalCount - completedCount;
-  const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
-  const highThreatCount = missions.filter(m => {
-    const lvl = String(m.threatLevel || m.threat || m.priority || '').toLowerCase();
-    return lvl === 'high' || lvl === 'critical';
-  }).length;
-
-  target.innerHTML = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1rem;">
-      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;">
-        <button
-          type="button"
-          class="insights-agency-tab"
-          data-agency="WISE"
-          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #12151c !important; ${!isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
-        >
-          🕵️ WISE HQ
-        </button>
-        <button
-          type="button"
-          class="insights-agency-tab"
-          data-agency="SSS"
-          style="padding: 0.5rem 1rem; font-family: 'Anton', sans-serif; font-size: 0.9rem; letter-spacing: 0.03em; cursor: pointer; border: 1px solid #059669 !important; background: #10b981 !important; color: #12151c !important; ${isYuri ? 'outline: 2px solid #064e3b;' : ''} box-shadow: 2px 2px 0px rgba(0,0,0,0.12);"
-        >
-          🛡️ SSS BUREAU
-        </button>
-      </div>
-
-      <div style="background: #ffb6c1; border: 1px solid #db7093; border-left: 5px solid #10b981; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-        <h3 style="color: #10b981; font-family: 'Anton', sans-serif; margin-top: 0; border-bottom: 2px solid #10b981; padding-bottom: 0.35rem;">
-          📊 Insights & Telemetry — ${isYuri ? 'SSS BUREAU' : 'WISE HQ'} (${activeProject.name})
-        </h3>
-        <p style="color: #111827; font-size: 0.85rem; margin: 0.4rem 0 1rem;">
-          Live operational metrics computed from your active dossier missions.
-        </p>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.85rem;">
-          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
-            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">TOTAL MISSIONS</div>
-            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${totalCount}</div>
-          </div>
-
-          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
-            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">ACTIVE</div>
-            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${activeCount}</div>
-          </div>
-
-          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
-            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">ACCOMPLISHED</div>
-            <div style="font-size: 1.4rem; font-weight: bold; color: #111827; margin-top: 0.2rem;">${completedCount} (${completionRate}%)</div>
-          </div>
-
-          <div style="background: #fff5f6; border: 1px solid #db7093; border-left: 4px solid #10b981; padding: 0.75rem;">
-            <div style="font-size: 0.75rem; color: #065f46; font-weight: bold;">HIGH / CRITICAL</div>
-            <div style="font-size: 1.4rem; font-weight: bold; color: #991b1b; margin-top: 0.2rem;">${highThreatCount}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  target.querySelectorAll('.insights-agency-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const selected = btn.getAttribute('data-agency');
-      if (selected && selected !== getActiveAgency()) {
-        setActiveAgency(selected);
-        if (typeof renderCallback === 'function') {
-          renderCallback();
-        } else {
-          renderInsightsView(container, renderCallback);
-        }
-      }
-    });
-  });
+function stopPrepareDictation() {
+  if (activePrepRecognizer) {
+    try {
+      activePrepRecognizer.stop();
+    } catch (_) {
+      // Ignore already-stopped recognition instances
+    }
+    activePrepRecognizer = null;
+  }
+  if (activePrepButton) {
+    activePrepButton.textContent = '🎙️ Voice Dictate';
+    activePrepButton.style.background = '#10b981';
+    activePrepButton.style.color = '#12151c';
+    activePrepButton.setAttribute('aria-pressed', 'false');
+    activePrepButton = null;
+  }
 }
 
-/* ================================================================= *
-- MISSION PREPARATION VIEW MODULE                                   *
-- ================================================================= */
+export function attachPrepareDictationButtons(target) {
+  const dictateTargets = [
+    {
+      btnSelector: '#voice-dictate-general-prep-btn',
+      textareaSelector: '#general-prep-script'
+    },
+    ...Array.from(target.querySelectorAll('.voice-dictate-mission-prep-btn')).map((btn) => ({
+      btn,
+      textareaSelector: `#tab-prep-script-${btn.getAttribute('data-index')}`
+    }))
+  ];
 
-export function renderPrepareMissionView(container, renderCallback) {
-  const target = resolveTargetContainer(container);
-  if (!target) return;
+  dictateTargets.forEach(({ btn: explicitBtn, btnSelector, textareaSelector }) => {
+    const btn = explicitBtn || target.querySelector(btnSelector);
+    const textarea = target.querySelector(textareaSelector);
+    if (!btn || !textarea) return;
 
-  const agency = getActiveAgency();
-  const isYuri = agency === 'yuri';
-  const agencyPrefix = isYuri ? 'yuri' : 'wise';
-
-  let projects = getAgencyProjects(agency);
-  if (!Array.isArray(projects)) projects = [];
-
-  let rawIndex = getCurrentProjectIndex() || 0;
-  if (rawIndex >= projects.length) rawIndex = 0;
-  const activeIndex = projects[rawIndex] ? rawIndex : 0;
-
-  if (!projects[activeIndex]) {
-    projects[activeIndex] = {
-      name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
-      missions: [],
-      generalPreparation: { keyTakeaways: '', briefingScript: '' }
-    };
-  }
-
-  const activeProject = projects[activeIndex];
-  let missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
-
-  if (agency === 'wise') {
-    missions = missions.filter(m => !m.title || !m.title.toLowerCase().includes('monitor twilight'));
-  }
-
-  const generalPrep = activeProject.generalPreparation || { keyTakeaways: '', briefingScript: '' };
-
-  let html = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
-      ${renderAgencySwitcher('prep', isYuri)}
-
-      <p style="background: #ffb6c1; padding: 0.8rem; border: 1px solid #db7093; border-left: 4px solid #10b981; color: #10b981; font-weight: bold; margin: 0;">
-        🎯 Mission Preparation Hub (${isYuri ? 'SSS Bureau' : 'WISE HQ'}): Keep the objective simple. What are the three things about this mission that everyone should remember? Write the script first.
-      </p>
-
-      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-        <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">
-          🌐 General Operation Briefing & Strategy (${isYuri ? 'SSS Bureau' : 'WISE HQ'})
-        </h3>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
-          <div>
-            <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">3 Core Takeaways:</label>
-            <input type="text" id="general-prep-takeaways" value="${generalPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
-          </div>
-          <div>
-            <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
-            <textarea id="general-prep-script" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${generalPrep.briefingScript || ''}</textarea>
-          </div>
-          <button type="button" id="save-general-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save General Briefing</button>
-        </div>
-      </div>
-  `;
-
-  if (missions.length === 0) {
-    html += `
-      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; text-align: center; color: #581c87; font-style: italic;">
-        No active missions recorded for this operation dossier yet. Add missions in the main dossier to prep them individually.
-      </div>
-    `;
-  } else {
-    missions.forEach((m, index) => {
-      const prep = m.preparation || { keyTakeaways: '', briefingScript: '' };
-      html += `
-        <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
-          <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">
-            🎯 Mission: ${m.title}
-          </h3>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
-            <div>
-              <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">3 Core Takeaways:</label>
-              <input type="text" id="tab-prep-takeaways-${index}" value="${prep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
-            </div>
-            <div>
-              <label style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
-              <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${prep.briefingScript || ''}</textarea>
-            </div>
-            <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save Mission Briefing</button>
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  html += renderDancingMenDoodleSection(agencyPrefix);
-  html += `</div>`;
-  target.innerHTML = html;
-
-  attachDoodleCanvasListeners(target);
-  attachAgencySwitcherListeners(target, 'prep', renderCallback);
-
-  const saveGeneralBtn = target.querySelector('#save-general-prep-btn');
-  if (saveGeneralBtn) {
-    saveGeneralBtn.addEventListener('click', () => {
-      const keyTakeaways = document.getElementById('general-prep-takeaways').value.trim();
-      const briefingScript = document.getElementById('general-prep-script').value.trim();
-
-      const freshProjects = getAgencyProjects(agency);
-      if (!freshProjects[activeIndex]) {
-        freshProjects[activeIndex] = {
-          name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
-          missions: []
-        };
-      }
-
-      freshProjects[activeIndex].generalPreparation = { keyTakeaways, briefingScript };
-      saveAgencyProjects(agency, freshProjects);
-
-      alert('🎯 General operational briefing successfully saved!');
-      if (typeof renderCallback === 'function') renderCallback();
-    });
-  }
-
-  target.querySelectorAll('.save-tab-prep-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const mIdx = Number(e.target.getAttribute('data-index'));
-      const keyTakeaways = document.getElementById(`tab-prep-takeaways-${mIdx}`).value.trim();
-      const briefingScript = document.getElementById(`tab-prep-script-${mIdx}`).value.trim();
+      e.preventDefault();
+      e.stopPropagation();
 
-      const freshProjects = getAgencyProjects(agency);
-      if (freshProjects[activeIndex] && freshProjects[activeIndex].missions[mIdx]) {
-        freshProjects[activeIndex].missions[mIdx].preparation = { keyTakeaways, briefingScript };
-        saveAgencyProjects(agency, freshProjects);
+      const alreadyRecordingThis = activePrepButton === btn && activePrepRecognizer !== null;
+      stopPrepareDictation();
+      if (alreadyRecordingThis) return;
+
+      if (!PrepareSpeechRecognition) {
+        alert('🎙️ Voice dictation is not supported in this browser.');
+        return;
       }
 
-      alert('🎯 Mission preparation briefing successfully saved!');
-      if (typeof renderCallback === 'function') renderCallback();
+      const recognizer = new PrepareSpeechRecognition();
+      recognizer.lang = navigator.language || 'en-US';
+      recognizer.interimResults = false;
+      recognizer.maxAlternatives = 1;
+
+      activePrepRecognizer = recognizer;
+      activePrepButton = btn;
+
+      btn.textContent = '⏹️ Listening...';
+      btn.style.background = '#8b1e1e';
+      btn.style.color = '#fff8f5';
+      btn.setAttribute('aria-pressed', 'true');
+
+      recognizer.onresult = (event) => {
+        let spokenChunk = '';
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          if (event.results[i].isFinal) {
+            spokenChunk += event.results[i][0].transcript;
+          }
+        }
+        const cleaned = spokenChunk.trim();
+        if (cleaned) {
+          const currentVal = textarea.value || '';
+          const sep = currentVal.length > 0 && !/\s$/.test(currentVal) ? ' ' : '';
+          textarea.value = `${currentVal}${sep}${cleaned}`;
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+          textarea.focus();
+        }
+      };
+
+      recognizer.onerror = (event) => {
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          console.warn('Prepare dictation error:', event.error);
+        }
+        stopPrepareDictation();
+      };
+
+      recognizer.onend = () => {
+        stopPrepareDictation();
+      };
+
+      try {
+        recognizer.start();
+      } catch (_) {
+        stopPrepareDictation();
+      }
     });
   });
 }

@@ -3,6 +3,7 @@ import { renderCalendarGridView } from '../views/calendar.renderer.js';
 import { renderTableView } from '../views/table.renderer.js';
 import { renderDeveloperView } from '../views/dev.renderer.js';
 import { renderAutomationsView } from '../views/automations.renderer.js';
+import { renderPrepareMissionView, renderInsightsView } from '../views/prep.render.js';
 import { renderApp } from '../dom.controllers/dom.controller.js';
 
 export function initOperationsListeners() {
@@ -30,8 +31,11 @@ export function initOperationsListeners() {
       renderBoardView(contentContainer, renderApp);
     } 
     else if (id === 'view-prep-btn') {
-      renderApp(contentContainer);
+      renderPrepareMissionView(contentContainer, renderApp);
     } 
+    else if (id === 'view-insights-btn') {
+      renderInsightsView(contentContainer, renderApp);
+    }
     else if (id === 'view-calendar-btn') {
       renderCalendarGridView(contentContainer, renderApp);
     } 
@@ -39,7 +43,7 @@ export function initOperationsListeners() {
       renderTableView(contentContainer, renderApp);
     } 
     else if (id === 'view-dev-btn') {
-      renderDeveloperOverview(contentContainer, renderApp);
+      renderDeveloperView(contentContainer, renderApp);
     } 
     else if (id === 'view-automations-btn') {
       renderAutomationsView(contentContainer, renderApp);

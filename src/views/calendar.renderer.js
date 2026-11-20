@@ -13,27 +13,52 @@ import {
   renderAgencySwitcher,
   attachAgencySwitcherListeners
 } from './agency.switcher.js';
+import {
+  normalizeAgencyKey,
+  syncAgencyMissionsAndPrepToCalendar,
+  syncNoteToAgencyCalendar
+} from './agency.sync.js';
 
 let currentCalendarDate = new Date();
 
 function isSSSAgeny(agency) {
-  const normalized = String(agency || '').trim().toUpperCase();
-  return normalized === 'SSS' || normalized === 'YURI' || normalized === 'SSS_BUREAU';
+  const normalized = normalizeAgencyKey(agency);
+  return normalized === 'SSS';
+}
+
+function formatDueDateToIso(dueDate) {
+  if (!dueDate) return '';
+  try {
+    const parsed = typeof dueDate === 'string' ? parseISO(dueDate) : new Date(dueDate);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return format(parsed, 'yyyy-MM-dd');
+  } catch (_) {
+    return '';
+  }
 }
 
 export function renderCalendarGridView(container, monthStart, monthEnd, daysInMonth, startDayOfWeek, isSameDayFn, renderCallback) {
   const target = resolveTargetContainer(container);
   if (!target) return;
 
-  const agency = getActiveAgency();
+  const agency = normalizeAgencyKey(getActiveAgency());
   const isSSS = isSSSAgeny(agency);
   const agencyLabel = isSSS ? 'SSS BUREAU' : 'WISE HQ';
 
-  const projects = getAgencyProjects(agency);
-  const projectIdx = (projects && projects[getCurrentProjectIndex()]) ? getCurrentProjectIndex() : 0;
+  // Keep this agency's missions, prep notes, and calendar entries synced on render
+  syncAgencyMissionsAndPrepToCalendar(agency);
 
-  if (!projects || projects.length === 0) {
-    projects.push({ name: isSSS ? 'SSS Operations' : 'WISE Operations', missions: [] });
+  const projects = getAgencyProjects(agency) || [];
+  const rawIdx = getCurrentProjectIndex() || 0;
+  const projectIdx = projects[rawIdx] ? rawIdx : 0;
+
+  if (projects.length === 0) {
+    projects.push({
+      name: isSSS ? 'SSS Operations' : 'WISE Operations',
+      missions: [],
+      generalPreparation: { keyTakeaways: '', briefingScript: '' },
+      adHocPreparation: { keyTakeaways: '', briefingScript: '' }
+    });
     saveAgencyProjects(agency, projects);
   }
 
@@ -92,13 +117,8 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
 
     const dayEvents = savedCalendarEvents.filter(ev => ev.date === isoDate);
     const dayMissions = missions.filter(m => {
-      if (!m.dueDate) return false;
-      try {
-        const parsed = typeof m.dueDate === 'string' ? parseISO(m.dueDate) : new Date(m.dueDate);
-        return !Number.isNaN(parsed.getTime()) && sameDay(parsed, day);
-      } catch (err) {
-        return false;
-      }
+      const mIso = formatDueDateToIso(m.dueDate || m.date);
+      return mIso === isoDate;
     });
 
     let entriesHtml = '';
@@ -166,12 +186,23 @@ export function renderCalendarGridView(container, monthStart, monthEnd, daysInMo
       const note = prompt(`[${agencyLabel} // ${selectedDate}] Enter calendar entry or directive:`);
 
       if (!note || !note.trim()) return;
+      const cleanTitle = note.trim();
 
       addCalendarEvent(
         {
           date: selectedDate,
-          title: note.trim(),
+          title: cleanTitle,
           threatLevel: 'Medium'
+        },
+        agency
+      );
+
+      syncNoteToAgencyCalendar(
+        {
+          title: cleanTitle,
+          date: selectedDate,
+          notes: cleanTitle,
+          source: 'calendar-grid'
         },
         agency
       );
