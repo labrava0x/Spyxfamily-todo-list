@@ -287,7 +287,6 @@ export function initLayout() {
     return;
   }
 
-  const archiveSubtitle = isYuriPage ? 'SSS ARCHIVES // TOP SECRET' : 'WISE ARCHIVES // TOP SECRET';
   const operationLabel = isYuriPage ? 'State Security Operation' : 'Target Operation';
   const establishOpHeading = isYuriPage ? 'Establish Surveillance' : 'Establish Operation';
   const establishMissionHeading = isYuriPage ? 'Establish State Directive' : 'Establish mission';
@@ -319,7 +318,6 @@ export function initLayout() {
 
     <div class="dashboard-grid" id="main-dashboard-grid">
       <aside class="panel dossier-folder">
-        <div class="archive-subtitle">${archiveSubtitle}</div>
         <h2>Active Operations</h2>
         <div id="project-nav"></div>
 
@@ -331,7 +329,6 @@ export function initLayout() {
       </aside>
 
       <main class="panel dossier-folder">
-        <div class="archive-subtitle">${archiveSubtitle}</div>
         <div id="dynamic-view-container">
           <div id="board-creation-section">
             <div class="board-creation-header">
