@@ -13,6 +13,10 @@ import {
   attachDoodleCanvasListeners,
   attachPrepareDictationButtons
 } from './renderer.js';
+import {
+  normalizeAgencyKey,
+  saveAndSyncAgencyPrep
+} from './agency.sync.js';
 
 /* ================================================================= *
 - INSIGHTS VIEW MODULE                                              *
@@ -21,8 +25,8 @@ export function renderInsightsView(container, renderCallback) {
   const target = resolveTargetContainer(container);
   if (!target) return;
 
-  const agency = getActiveAgency();
-  const isYuri = agency === 'SSS' || agency === 'yuri';
+  const agency = normalizeAgencyKey(getActiveAgency());
+  const isYuri = agency === 'SSS';
 
   const projects = getAgencyProjects(agency) || [];
   const rawIndex = getCurrentProjectIndex() || 0;
@@ -99,8 +103,8 @@ export function renderInsightsView(container, renderCallback) {
 
   target.querySelectorAll('.insights-agency-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      const selected = btn.getAttribute('data-agency');
-      if (selected && selected !== getActiveAgency()) {
+      const selected = normalizeAgencyKey(btn.getAttribute('data-agency'));
+      if (selected && selected !== normalizeAgencyKey(getActiveAgency())) {
         setActiveAgency(selected);
         if (typeof renderCallback === 'function') {
           renderCallback();
@@ -120,8 +124,8 @@ export function renderPrepareMissionView(container, renderCallback) {
   const target = resolveTargetContainer(container);
   if (!target) return;
 
-  const agency = getActiveAgency();
-  const isYuri = agency === 'yuri';
+  const agency = normalizeAgencyKey(getActiveAgency());
+  const isYuri = agency === 'SSS';
   const agencyPrefix = isYuri ? 'yuri' : 'wise';
 
   let projects = getAgencyProjects(agency);
@@ -138,12 +142,13 @@ export function renderPrepareMissionView(container, renderCallback) {
       generalPreparation: { keyTakeaways: '', briefingScript: '' },
       adHocPreparation: { keyTakeaways: '', briefingScript: '' }
     };
+    saveAgencyProjects(agency, projects);
   }
 
   const activeProject = projects[activeIndex];
   let missions = Array.isArray(activeProject.missions) ? activeProject.missions : [];
 
-  if (agency === 'wise') {
+  if (agency === 'WISE') {
     missions = missions.filter(m => !m.title || !m.title.toLowerCase().includes('monitor twilight'));
   }
 
@@ -151,28 +156,28 @@ export function renderPrepareMissionView(container, renderCallback) {
   const adHocPrep = activeProject.adHocPreparation || { keyTakeaways: '', briefingScript: '' };
 
   let html = `
-    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem;">
+    <div style="font-family: 'Special Elite', monospace; display: flex; flex-direction: column; gap: 1.5rem; width: 100%; box-sizing: border-box;">
       ${renderAgencySwitcher('prep', isYuri)}
 
-      <p style="background: #ffb6c1; padding: 0.8rem; border: 1px solid #db7093; border-left: 4px solid #10b981; color: #10b981; font-weight: bold; margin: 0;">
+      <p style="background: #ffb6c1; padding: 0.8rem; border: 1px solid #db7093; border-left: 4px solid #10b981; color: #10b981; font-weight: bold; margin: 0; box-sizing: border-box;">
         🎯 Mission Preparation Hub (${isYuri ? 'SSS Bureau' : 'WISE HQ'}): Keep the objective simple. What are the three things about this mission that everyone should remember? Write the script first.
       </p>
 
-      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">
           🌐 General Operation Briefing & Strategy (${isYuri ? 'SSS Bureau' : 'WISE HQ'})
         </h3>
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
           <div>
             <label for="general-prep-takeaways" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">3 Core Takeaways:</label>
-            <input type="text" id="general-prep-takeaways" value="${generalPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
+            <input type="text" id="general-prep-takeaways" value="${generalPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
           </div>
           <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
               <label for="general-prep-script" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
-              <button type="button" id="voice-dictate-general-prep-btn" class="secondary-btn" aria-pressed="false" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">🎙️ Voice Dictate</button>
+              <button type="button" id="voice-dictate-general-prep-btn" class="secondary-btn" aria-pressed="false" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer; flex-shrink: 0;">🎙️ Voice Dictate</button>
             </div>
-            <textarea id="general-prep-script" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${generalPrep.briefingScript || ''}</textarea>
+            <textarea id="general-prep-script" rows="3" placeholder="Write the script first..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${generalPrep.briefingScript || ''}</textarea>
           </div>
           <button type="button" id="save-general-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save General Briefing</button>
         </div>
@@ -181,7 +186,7 @@ export function renderPrepareMissionView(container, renderCallback) {
 
   if (missions.length === 0) {
     html += `
-      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+      <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden;">
         <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">
           🎯 Proactive / Unassigned Field Prep (No Active Mission Required)
         </h3>
@@ -191,11 +196,14 @@ export function renderPrepareMissionView(container, renderCallback) {
         <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
           <div>
             <label for="adhoc-prep-takeaways" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">3 Core Takeaways:</label>
-            <input type="text" id="adhoc-prep-takeaways" value="${adHocPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
+            <input type="text" id="adhoc-prep-takeaways" value="${adHocPrep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
           </div>
           <div>
-            <label for="adhoc-prep-script" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Field Prep / Contingency Script:</label>
-            <textarea id="adhoc-prep-script" rows="3" placeholder="Draft contingency steps, cover details, or recon notes..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${adHocPrep.briefingScript || ''}</textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <label for="adhoc-prep-script" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Field Prep / Contingency Script:</label>
+              <button type="button" id="voice-dictate-adhoc-prep-btn" class="secondary-btn" aria-pressed="false" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer; flex-shrink: 0;">🎙️ Voice Dictate</button>
+            </div>
+            <textarea id="adhoc-prep-script" rows="3" placeholder="Draft contingency steps, cover details, or recon notes..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${adHocPrep.briefingScript || ''}</textarea>
           </div>
           <button type="button" id="save-adhoc-prep-btn" class="secondary-btn" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save Field Prep</button>
         </div>
@@ -205,21 +213,21 @@ export function renderPrepareMissionView(container, renderCallback) {
     missions.forEach((m, index) => {
       const prep = m.preparation || { keyTakeaways: '', briefingScript: '' };
       html += `
-        <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);">
+        <div style="background: #ffb6c1; border: 1px solid #db7093; padding: 1.2rem; box-shadow: 2px 2px 0px rgba(0,0,0,0.1); box-sizing: border-box; overflow: hidden;">
           <h3 style="margin-top: 0; font-family: 'Anton', sans-serif; font-size: 1.2rem; color: #10b981; border-bottom: 2px solid #10b981; padding-bottom: 0.3rem;">
             🎯 Mission: ${m.title}
           </h3>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;">
             <div>
               <label for="tab-prep-takeaways-${index}" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">3 Core Takeaways:</label>
-              <input type="text" id="tab-prep-takeaways-${index}" value="${prep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
+              <input type="text" id="tab-prep-takeaways-${index}" value="${prep.keyTakeaways || ''}" placeholder="1. ... 2. ... 3. ..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;" />
             </div>
             <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
                 <label for="tab-prep-script-${index}" style="font-size: 0.85rem; font-weight: bold; color: #10b981;">Briefing Script / Strategy:</label>
-                <button type="button" class="secondary-btn voice-dictate-mission-prep-btn" data-index="${index}" aria-pressed="false" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">🎙️ Voice Dictate</button>
+                <button type="button" class="secondary-btn voice-dictate-mission-prep-btn" data-index="${index}" aria-pressed="false" style="padding: 0.25rem 0.65rem; font-size: 0.8rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer; flex-shrink: 0;">🎙️ Voice Dictate</button>
               </div>
-              <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${prep.briefingScript || ''}</textarea>
+              <textarea id="tab-prep-script-${index}" rows="3" placeholder="Write the script first..." style="width: 100%; box-sizing: border-box; font-size: 0.9rem; padding: 0.4rem; background: #fff5f6; border: 1px solid #db7093;">${prep.briefingScript || ''}</textarea>
             </div>
             <button type="button" class="secondary-btn save-tab-prep-btn" data-index="${index}" style="align-self: flex-start; padding: 0.4rem 1rem; font-size: 0.85rem; background: #10b981; color: #12151c; border: 1px solid #059669; cursor: pointer;">Save Mission Briefing</button>
           </div>
@@ -236,22 +244,104 @@ export function renderPrepareMissionView(container, renderCallback) {
   attachAgencySwitcherListeners(target, 'prep', renderCallback);
   attachPrepareDictationButtons(target);
 
+  // Also ensure #voice-dictate-adhoc-prep-btn works even if renderer.js only lists general/mission buttons
+  const adHocDictateBtn = target.querySelector('#voice-dictate-adhoc-prep-btn');
+  const adHocScriptEl = target.querySelector('#adhoc-prep-script');
+  if (adHocDictateBtn && adHocScriptEl) {
+    const SpeechRec =
+      typeof window !== 'undefined'
+        ? window.SpeechRecognition || window.webkitSpeechRecognition || null
+        : null;
+
+    let adHocRecognizer = null;
+    const stopAdHocRec = () => {
+      if (adHocRecognizer) {
+        try {
+          adHocRecognizer.stop();
+        } catch (_) {
+          // Ignore already stopped recognizer
+        }
+        adHocRecognizer = null;
+      }
+      adHocDictateBtn.textContent = '🎙️ Voice Dictate';
+      adHocDictateBtn.style.background = '#10b981';
+      adHocDictateBtn.style.color = '#12151c';
+      adHocDictateBtn.setAttribute('aria-pressed', 'false');
+    };
+
+    adHocDictateBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (adHocRecognizer) {
+        stopAdHocRec();
+        return;
+      }
+
+      if (!SpeechRec) {
+        alert('🎙️ Voice dictation is not supported in this browser.');
+        return;
+      }
+
+      const rec = new SpeechRec();
+      rec.lang = navigator.language || 'en-US';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      adHocRecognizer = rec;
+
+      adHocDictateBtn.textContent = '⏹️ Listening...';
+      adHocDictateBtn.style.background = '#8b1e1e';
+      adHocDictateBtn.style.color = '#fff8f5';
+      adHocDictateBtn.setAttribute('aria-pressed', 'true');
+
+      rec.onresult = (event) => {
+        let spoken = '';
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+          if (event.results[i].isFinal) {
+            spoken += event.results[i][0].transcript;
+          }
+        }
+        const cleaned = spoken.trim();
+        if (cleaned) {
+          const currentVal = adHocScriptEl.value || '';
+          const sep = currentVal.length > 0 && !/\s$/.test(currentVal) ? ' ' : '';
+          adHocScriptEl.value = `${currentVal}${sep}${cleaned}`;
+          adHocScriptEl.dispatchEvent(new Event('input', { bubbles: true }));
+          adHocScriptEl.focus();
+        }
+      };
+
+      rec.onerror = (event) => {
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          console.warn('Field prep dictation error:', event.error);
+        }
+        stopAdHocRec();
+      };
+
+      rec.onend = () => {
+        stopAdHocRec();
+      };
+
+      try {
+        rec.start();
+      } catch (_) {
+        stopAdHocRec();
+      }
+    });
+  }
+
   const saveGeneralBtn = target.querySelector('#save-general-prep-btn');
   if (saveGeneralBtn) {
     saveGeneralBtn.addEventListener('click', () => {
       const keyTakeaways = document.getElementById('general-prep-takeaways').value.trim();
       const briefingScript = document.getElementById('general-prep-script').value.trim();
 
-      const freshProjects = getAgencyProjects(agency);
-      if (!freshProjects[activeIndex]) {
-        freshProjects[activeIndex] = {
-          name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
-          missions: []
-        };
-      }
-
-      freshProjects[activeIndex].generalPreparation = { keyTakeaways, briefingScript };
-      saveAgencyProjects(agency, freshProjects);
+      saveAndSyncAgencyPrep({
+        keyTakeaways,
+        briefingScript,
+        mode: 'general',
+        agency
+      });
 
       alert('🎯 General operational briefing successfully saved!');
       if (typeof renderCallback === 'function') renderCallback();
@@ -264,16 +354,12 @@ export function renderPrepareMissionView(container, renderCallback) {
       const keyTakeaways = document.getElementById('adhoc-prep-takeaways').value.trim();
       const briefingScript = document.getElementById('adhoc-prep-script').value.trim();
 
-      const freshProjects = getAgencyProjects(agency);
-      if (!freshProjects[activeIndex]) {
-        freshProjects[activeIndex] = {
-          name: isYuri ? 'SSS Surveillance Operation' : 'WISE Operations',
-          missions: []
-        };
-      }
-
-      freshProjects[activeIndex].adHocPreparation = { keyTakeaways, briefingScript };
-      saveAgencyProjects(agency, freshProjects);
+      saveAndSyncAgencyPrep({
+        keyTakeaways,
+        briefingScript,
+        mode: 'adhoc',
+        agency
+      });
 
       alert('🎯 Proactive field preparation saved!');
       if (typeof renderCallback === 'function') renderCallback();
@@ -286,11 +372,13 @@ export function renderPrepareMissionView(container, renderCallback) {
       const keyTakeaways = document.getElementById(`tab-prep-takeaways-${mIdx}`).value.trim();
       const briefingScript = document.getElementById(`tab-prep-script-${mIdx}`).value.trim();
 
-      const freshProjects = getAgencyProjects(agency);
-      if (freshProjects[activeIndex] && freshProjects[activeIndex].missions[mIdx]) {
-        freshProjects[activeIndex].missions[mIdx].preparation = { keyTakeaways, briefingScript };
-        saveAgencyProjects(agency, freshProjects);
-      }
+      saveAndSyncAgencyPrep({
+        keyTakeaways,
+        briefingScript,
+        mode: 'mission',
+        missionIndex: mIdx,
+        agency
+      });
 
       alert('🎯 Mission preparation briefing successfully saved!');
       if (typeof renderCallback === 'function') renderCallback();
