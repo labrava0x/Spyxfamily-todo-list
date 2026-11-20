@@ -366,36 +366,104 @@ body.light-paper-theme .mission-card {
   position: relative;
   display: inline-flex;
   align-items: center;
-  background: #f5e6dc;
-  border: 3px solid #8c2a29;
-  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4);
+  background: #2b1216;
+  border: 3px solid #c81d25;
+  box-shadow: 6px 6px 0 rgba(20, 4, 6, 0.55);
   padding: 0.5rem 0.6rem;
-  margin-top: 0.65rem;
+  margin-left: 22px;
+  margin-top: 0.9rem;
+  overflow: visible;
+}
+
+/* Yor's crimson headband wrapping across the top of the banner */
+.inside-codename-container::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  right: -4px;
+  height: 7px;
+  background: linear-gradient(90deg, #7a0e14 0%, #d61c24 50%, #8f141b 100%);
+  border: 1.5px solid #2a0507;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* Flowing crimson ribbon tails extending off the headband */
+.inside-codename-container::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: -18px;
+  width: 18px;
+  height: 16px;
+  background:
+    linear-gradient(135deg, #c81d25 45%, transparent 46%) 0 0 / 12px 10px no-repeat,
+    linear-gradient(215deg, #8f141b 45%, transparent 46%) 6px 6px / 12px 10px no-repeat;
+  transform: rotate(18deg);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Diagonal Thorn Princess stiletto crossing outside the banner */
+.inside-codename-container .inside-codename-bar::before {
+  content: "";
+  position: absolute;
+  left: -34px;
+  top: 50%;
+  width: 34px;
+  height: 10px;
+  background:
+    linear-gradient(90deg, #b81d24 0%, #3d080c 28%, #e0b841 28%, #e0b841 35%, #e5e9f0 36%, #ffffff 72%, #9aa5b1 100%);
+  clip-path: polygon(
+    0% 24%,
+    28% 24%,
+    28% 0%,
+    36% 0%,
+    36% 22%,
+    84% 12%,
+    100% 50%,
+    84% 88%,
+    36% 78%,
+    36% 100%,
+    28% 100%,
+    28% 76%,
+    0% 76%
+  );
+  transform: translateY(-50%) rotate(-36deg);
+  transform-origin: center;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+  z-index: 5;
+  pointer-events: none;
 }
 
 .inside-codename-tab {
   position: absolute;
-  top: -0.85rem;
-  left: 0.65rem;
-  background: #b8332a;
-  color: #fff8f5;
+  top: -0.95rem;
+  left: 0.75rem;
+  background: #c81d25;
+  color: #fff6f6;
   font-family: 'Anton', sans-serif;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 0.1rem 0.5rem;
-  border: 1px solid #1c2826;
+  border: 1px solid #e0b841;
+  z-index: 6;
 }
 
 .inside-codename-bar {
-  background: #232325;
-  color: #f6efe9;
+  position: relative;
+  background: #1b0b0e;
+  color: #fff0f1;
   font-family: 'Anton', sans-serif;
   font-size: 1.25rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 0.42rem 1rem;
-  border-left: 4px solid #b8332a;
+  border-left: 4px solid #e0b841;
 }
 
 /* Smooth room light transition */
